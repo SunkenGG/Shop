@@ -1,0 +1,4 @@
+name: Shop
+version: '1.0-SNAPSHOT'
+main: gg.sunken.shop.ShopPlugin
+api-version: '1.21'
