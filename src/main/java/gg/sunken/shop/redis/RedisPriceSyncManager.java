@@ -6,17 +6,14 @@ import lombok.extern.java.Log;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 @Log
-public class PriceSyncManager {
+public class RedisPriceSyncManager implements PriceSyncManager {
 
     private final ShopPlugin plugin = ShopPlugin.instance();
     private final Jedis subscriber;
     private final Jedis publisher;
 
-    public PriceSyncManager(String uri) {
+    public RedisPriceSyncManager(String uri) {
         this.subscriber = new Jedis(uri);
         this.publisher = new Jedis(uri);
         subscribe();

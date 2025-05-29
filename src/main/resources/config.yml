@@ -1,0 +1,20 @@
+mongo:
+  uri: "mongodb://localhost:27017"
+  database: "mydatabase"
+
+redis:
+  uri: "redis://localhost:6379"
+
+default:
+  price: 100
+  elasticity: 0.2
+  support: 0.03
+  resistance: 0.5
+
+items:
+  diamond:
+    id: DIAMOND
+    price: 100
+    elasticity: 0.05
+    support: 0.03
+    resistance: 0.5

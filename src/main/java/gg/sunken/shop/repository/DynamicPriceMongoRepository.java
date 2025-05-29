@@ -9,19 +9,15 @@ import gg.sunken.shop.entity.DynamicPriceItem;
 import org.bson.Document;
 
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Temporal;
 
-public class DynamicPriceRepository {
+public class DynamicPriceMongoRepository implements DynamicPriceRepository {
 
     private final static ReplaceOptions UPSERT = new ReplaceOptions().upsert(true);
     private final MongoCollection<Document> itemCollection;
     private final MongoCollection<Document> dayCollection;
 
-    public DynamicPriceRepository(MongoCollection<Document> itemCollection, MongoCollection<Document> dayCollection) {
+    public DynamicPriceMongoRepository(MongoCollection<Document> itemCollection, MongoCollection<Document> dayCollection) {
         this.itemCollection = itemCollection;
         this.dayCollection = dayCollection;
 
@@ -41,7 +37,7 @@ public class DynamicPriceRepository {
         return item;
     }
 
-    public void deleteHistory(String id) {
+    public void deletePriceData(String id) {
         itemCollection.deleteOne(new Document("_id", id));
     }
 

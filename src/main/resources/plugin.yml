@@ -2,3 +2,6 @@ name: Shop
 version: '1.0-SNAPSHOT'
 main: gg.sunken.shop.ShopPlugin
 api-version: '1.21'
+libraries:
+  - "redis.clients:jedis:6.0.0"
+  - "org.mongodb:mongodb-driver-sync:5.5.0"
