@@ -43,13 +43,18 @@ public final class ShopPlugin extends JavaPlugin {
 
         MongoClient client = MongoClients.create(getConfig().getString("mongo.uri"));
         MongoDatabase database = client.getDatabase(getConfig().getString("mongo.database"));
-        this.repository = new DynamicPriceMongoRepository(database.getCollection("prices"), database.getCollection("transaction s"));
+        this.repository = new DynamicPriceMongoRepository(database.getCollection("prices"), database.getCollection("transactions"));
 
         this.itemTemplates = new ConcurrentHashMap<>();
         final double price = getConfig().getDouble("default.price");
         final double elasticity = getConfig().getDouble("default.elasticity");
         final double support = getConfig().getDouble("default.support");
         final double resistance = getConfig().getDouble("default.resistance");
+
+        final double minPrice = getConfig().getDouble("default.min-price", 0);
+        final double maxPrice = getConfig().getDouble("default.max-price", 0);
+        final double defaultBuyTax = getConfig().getDouble("default.buy-tax", 0);
+        final double defaultSellTax = getConfig().getDouble("default.sell-tax", 0);
 
         for (String items : getConfig().getConfigurationSection("items").getKeys(false)) {
             ConfigurationSection section = getConfig().getConfigurationSection("items." + items);
@@ -63,10 +68,10 @@ public final class ShopPlugin extends JavaPlugin {
             double supportValue = section.getDouble("support", support);
             double resistanceValue = section.getDouble("resistance", resistance);
 
-            double minStock = section.getDouble("min-stock", 0);
-            double maxStock = section.getDouble("max-stock", 0);
-            double buyTax = section.getDouble("buy-tax", 0);
-            double sellTax = section.getDouble("sell-tax", 0);
+            double minimumPrice = section.getDouble("min-price",  minPrice);
+            double maximumPrice = section.getDouble("max-price", maxPrice);
+            double buyTax = section.getDouble("buy-tax", defaultBuyTax);
+            double sellTax = section.getDouble("sell-tax", defaultSellTax);
 
             ItemTemplate build = ItemTemplate.builder()
                     .id(id)
@@ -74,8 +79,8 @@ public final class ShopPlugin extends JavaPlugin {
                     .elasticity(elasticityValue)
                     .support(supportValue)
                     .resistance(resistanceValue)
-                    .minStock(minStock)
-                    .maxStock(maxStock)
+                    .minPrice(minimumPrice)
+                    .maxPrice(maximumPrice)
                     .buyTax(buyTax)
                     .sellTax(sellTax)
                     .build();
@@ -86,7 +91,9 @@ public final class ShopPlugin extends JavaPlugin {
         this.items = new ConcurrentHashMap<>();
         for (String key : itemTemplates.keySet()) {
             DynamicPriceItem byId = repository.findById(key);
-            if (byId == null) byId = new DynamicPriceItem(key, itemTemplates.get(key));
+            if (byId == null) {
+                byId = new DynamicPriceItem(key, itemTemplates.get(key));
+            }
 
             items.put(key, byId);
         }

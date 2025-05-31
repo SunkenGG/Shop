@@ -3,6 +3,7 @@ package gg.sunken.shop.redis;
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import lombok.extern.java.Log;
+import org.bukkit.Bukkit;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
@@ -22,7 +23,6 @@ public class RedisPriceSyncManager implements PriceSyncManager {
     public void updateStock(String id, int delta) {
         DynamicPriceItem item = plugin.items().get(id);
         if (item != null) {
-            item.applyStockDelta(delta);
             publisher.publish("price-updates", id + ":" + item.stock());
         } else {
             log.warning("Tried updating stock for non-existent item: " + id);

@@ -13,8 +13,8 @@ public class ItemTemplate {
     private final double elasticity;
     private final double support;
     private final double resistance;
-    private final double minStock;
-    private final double maxStock;
+    private final double minPrice;
+    private final double maxPrice;
     private final double buyTax;
     private final double sellTax;
 }

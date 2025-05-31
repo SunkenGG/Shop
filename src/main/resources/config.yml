@@ -10,11 +10,20 @@ default:
   elasticity: 0.2
   support: 0.03
   resistance: 0.5
+  min-price: 0.01
+  max-price: 9999
+  buy-tax: 0.15
+  sell-tax: 0.15
+
 
 items:
   diamond:
     id: DIAMOND
     price: 100
     elasticity: 0.05
-    support: 0.03
-    resistance: 0.5
+    support: 50
+    resistance: 125
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15

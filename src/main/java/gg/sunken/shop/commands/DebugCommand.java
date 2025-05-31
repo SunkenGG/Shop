@@ -58,10 +58,10 @@ public class DebugCommand extends BukkitCommand {
                 return true;
             }
 
-            plugin.repository().save(item);
             plugin.repository().addHistory(id, amount);
             double price = item.calculateTransactionPrice(amount);
             plugin.syncManager().updateStock(id, amount);
+            plugin.repository().save(item);
             sender.sendMessage("Sold " + amount + " of " + item.id() + " for " + price + " coins.");
         }
 
