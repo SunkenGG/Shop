@@ -24,6 +24,6 @@ items:
     support: 50
     resistance: 125
     min-price: 0.01
-    max-price: 9999
+    max-price: 3000
     buy-tax: 0.15
     sell-tax: 0.15

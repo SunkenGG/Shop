@@ -1,5 +1,6 @@
 package gg.sunken.shop.repository;
 
+import com.mongodb.MongoWriteException;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.ReplaceOptions;
@@ -13,6 +14,7 @@ import java.time.temporal.ChronoUnit;
 
 public class DynamicPriceMongoRepository implements DynamicPriceRepository {
 
+    private final static ShopPlugin PLUGIN = ShopPlugin.instance();
     private final static ReplaceOptions UPSERT = new ReplaceOptions().upsert(true);
     private final MongoCollection<Document> itemCollection;
     private final MongoCollection<Document> dayCollection;
@@ -21,7 +23,7 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
         this.itemCollection = itemCollection;
         this.dayCollection = dayCollection;
 
-        dayCollection.createIndex(new Document("itemId", 1).append("dayEnd", 1));
+        dayCollection.createIndex(new Document("itemId", 1).append("hourEnd", 1));
     }
 
     public void save(DynamicPriceItem item) {
@@ -42,26 +44,65 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
     }
 
     public void addHistory(String id, int amount) {
-        long midnight = Instant.now().truncatedTo(ChronoUnit.DAYS).getEpochSecond();
-        dayCollection.updateOne(
+        long hour = Instant.now().truncatedTo(ChronoUnit.HOURS).getEpochSecond();
+
+        Document existingDoc = dayCollection.find(
                 Filters.and(
                         Filters.eq("itemId", id),
-                        Filters.eq("dayEnd", midnight)
-                ),
-                new Document("$inc", new Document("amount", amount)),
-                new UpdateOptions().upsert(true)
-        );
+                        Filters.eq("hourEnd", hour)
+                )
+        ).first();
+
+        if (existingDoc == null) {
+            int currentStock = getCurrentStock(id) + amount;
+            try {
+                dayCollection.insertOne(
+                        new Document("itemId", id)
+                                .append("hourEnd", hour)
+                                .append("amount", currentStock)
+                );
+            } catch (MongoWriteException ignored) {
+                addHistory(id, amount);
+            }
+        } else {
+            dayCollection.updateOne(
+                    Filters.and(
+                            Filters.eq("itemId", id),
+                            Filters.eq("hourEnd", hour)
+                    ),
+                    new Document("$inc", new Document("amount", amount))
+            );
+        }
     }
 
     public void removeHistory(String id, int amount) {
-        long midnight = Instant.now().truncatedTo(ChronoUnit.DAYS).getEpochSecond();
-        dayCollection.updateOne(
+        long hour = Instant.now().truncatedTo(ChronoUnit.HOURS).getEpochSecond();
+
+        Document existingDoc = dayCollection.find(
                 Filters.and(
                         Filters.eq("itemId", id),
-                        Filters.eq("dayEnd", midnight)
-                ),
-                new Document("$inc", new Document("amount", -amount)),
-                new UpdateOptions().upsert(true)
-        );
+                        Filters.eq("hourEnd", hour)
+                )
+        ).first();
+
+        if (existingDoc == null) {
+            int currentStock = getCurrentStock(id) - amount;
+            dayCollection.insertOne(
+                    new Document("itemId", id)
+                            .append("hourEnd", hour)
+                            .append("amount", currentStock)
+            );
+        } else {
+            dayCollection.updateOne(
+                    Filters.and(
+                            Filters.eq("itemId", id),
+                            Filters.eq("hourEnd", hour)
+                    ),
+                    new Document("$inc", new Document("amount", -amount))
+            );
+        }
+    }
+    private int getCurrentStock(String id) {
+        return PLUGIN.items().get(id).stock();
     }
 }

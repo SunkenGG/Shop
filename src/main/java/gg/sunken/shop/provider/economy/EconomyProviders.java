@@ -1,0 +1,20 @@
+package gg.sunken.shop.provider.economy;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class EconomyProviders {
+
+    private static final Map<String, EconomyProvider> ECONOMY_PROVIDERS = new ConcurrentHashMap<>();
+
+    
+
+    public static EconomyProvider provider(String name) {
+        return ECONOMY_PROVIDERS.get(name);
+    }
+
+    public static List<String> providerNames() {
+        return List.copyOf(ECONOMY_PROVIDERS.keySet());
+    }
+}

@@ -2,6 +2,7 @@ package gg.sunken.shop.commands;
 
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
+import lombok.extern.java.Log;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
@@ -9,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+@Log
 public class DebugCommand extends BukkitCommand {
 
     private final ShopPlugin plugin = ShopPlugin.instance();
@@ -58,10 +60,18 @@ public class DebugCommand extends BukkitCommand {
                 return true;
             }
 
+            try {
+                item.stock(item.stock() - amount);
+            } catch (Exception e) {
+                sender.sendMessage("Not enough stock.");
+                return true;
+            }
+
             plugin.repository().addHistory(id, amount);
             double price = item.calculateTransactionPrice(amount);
             plugin.syncManager().updateStock(id, amount);
             plugin.repository().save(item);
+            log.info("Selling " + amount + " of " + item.id() + " for " + price + " coins.");
             sender.sendMessage("Sold " + amount + " of " + item.id() + " for " + price + " coins.");
         }
 
@@ -72,11 +82,18 @@ public class DebugCommand extends BukkitCommand {
                 return true;
             }
 
+            try {
+                item.stock(item.stock() + amount);
+            } catch (Exception e) {
+                sender.sendMessage("Not enough space in stock.");
+                return true;
+            }
 
             plugin.repository().removeHistory(id, amount);
             double price = item.calculateTransactionPrice(-amount);
             plugin.syncManager().updateStock(id, -amount);
             plugin.repository().save(item);
+            log.info("Buying " + amount + " of " + item.id() + " for " + price + " coins.");
             sender.sendMessage("Purchased " + amount + " of " + item.id() + " for " + price + " coins.");
         }
 

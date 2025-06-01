@@ -7,9 +7,9 @@ import lombok.experimental.Accessors;
 @Data
 @Getter
 @Accessors(fluent = true)
-public class TradingDay {
+public class TradingHour {
 
-    private final long dayEnd;
+    private final long hourEnd;
     private final String itemId;
     private final long amount;
 
