@@ -8,7 +8,9 @@ public class EconomyProviders {
 
     private static final Map<String, EconomyProvider> ECONOMY_PROVIDERS = new ConcurrentHashMap<>();
 
-    
+    static {
+
+    }
 
     public static EconomyProvider provider(String name) {
         return ECONOMY_PROVIDERS.get(name);

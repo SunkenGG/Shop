@@ -102,6 +102,7 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
             );
         }
     }
+
     private int getCurrentStock(String id) {
         return PLUGIN.items().get(id).stock();
     }
