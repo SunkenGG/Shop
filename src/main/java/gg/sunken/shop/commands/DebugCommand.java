@@ -24,12 +24,19 @@ public class DebugCommand extends BukkitCommand {
     public boolean execute(@NotNull CommandSender sender, @NotNull String label, @NotNull String[] args) {
 
         if (args.length == 0) {
-            sender.sendMessage("/ecodebug <sell/buy/check> <id> [amount]");
+            sender.sendMessage("/ecodebug <sell/buy/check/testui> <id> [amount]");
             return true;
         }
 
+        if (args.length == 1 && args[0].equalsIgnoreCase("testui")) {
+            if (sender instanceof Player player) {
+
+                return true;
+            }
+        }
+
         if (args.length == 2 && args[0].equalsIgnoreCase("check")) {
-            DynamicPriceItem item = plugin.items().get(args[1]);
+            DynamicPriceItem item = plugin.shopService().item(args[1]);
             if (item == null) {
                 sender.sendMessage("Item does not exist.");
                 return true;
@@ -54,7 +61,7 @@ public class DebugCommand extends BukkitCommand {
         }
 
         if (args[0].equalsIgnoreCase("sell")) {
-            DynamicPriceItem item = plugin.items().get(id);
+            DynamicPriceItem item = plugin.shopService().item(id);
             if (item == null) {
                 sender.sendMessage("Item does not exist.");
                 return true;
@@ -76,7 +83,7 @@ public class DebugCommand extends BukkitCommand {
         }
 
         if (args[0].equalsIgnoreCase("buy")) {
-            DynamicPriceItem item = plugin.items().get(id);
+            DynamicPriceItem item = plugin.shopService().item(id);
             if (item == null) {
                 sender.sendMessage("Item does not exist.");
                 return true;
@@ -105,7 +112,7 @@ public class DebugCommand extends BukkitCommand {
         if (args.length == 1) {
             return List.of("sell", "buy", "check");
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("sell") || args[0].equalsIgnoreCase("buy") || args[0].equalsIgnoreCase("check"))) {
-            return plugin.items().keySet().stream().toList();
+            return plugin.shopService().items().keySet().stream().toList();
         }
         return List.of();
     }

@@ -34,7 +34,7 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
     public DynamicPriceItem findById(String id) {
         Document doc = itemCollection.find(new Document("_id", id)).first();
         if (doc == null) return null;
-        DynamicPriceItem item = new DynamicPriceItem(doc.getString("_id"), ShopPlugin.instance().itemTemplates().get(id));
+        DynamicPriceItem item = new DynamicPriceItem(doc.getString("_id"), ShopPlugin.instance().shopService().template(id));
         item.stock(doc.getInteger("stock", 0));
         return item;
     }
@@ -104,6 +104,10 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
     }
 
     private int getCurrentStock(String id) {
-        return PLUGIN.items().get(id).stock();
+        DynamicPriceItem item = PLUGIN.shopService().item(id);
+        if (item == null) {
+            return 0;
+        }
+        return item.stock();
     }
 }

@@ -17,6 +17,12 @@ repositories {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
     }
+    maven {
+        url = "https://jitpack.io"
+    }
+    maven {
+        url = "https://repo.xenondevs.xyz/releases"
+    }
 }
 
 dependencies {
@@ -27,6 +33,9 @@ dependencies {
 
     compileOnly("redis.clients:jedis:6.0.0")
     compileOnly("org.mongodb:mongodb-driver-sync:5.5.0")
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+
+    implementation("xyz.xenondevs.invui:invui:1.45")
 }
 
 tasks.build {

@@ -1,5 +1,7 @@
 package gg.sunken.shop.provider.economy;
 
+import gg.sunken.shop.provider.economy.impl.VaultEconomyProvider;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,7 +11,7 @@ public class EconomyProviders {
     private static final Map<String, EconomyProvider> ECONOMY_PROVIDERS = new ConcurrentHashMap<>();
 
     static {
-
+        ECONOMY_PROVIDERS.put("vault", new VaultEconomyProvider());
     }
 
     public static EconomyProvider provider(String name) {

@@ -21,7 +21,7 @@ public class RedisPriceSyncManager implements PriceSyncManager {
     }
 
     public void updateStock(String id, int delta) {
-        DynamicPriceItem item = plugin.items().get(id);
+        DynamicPriceItem item = plugin.shopService().item(id);
         if (item != null) {
             publisher.publish("price-updates", id + ":" + item.stock());
         } else {
@@ -41,7 +41,7 @@ public class RedisPriceSyncManager implements PriceSyncManager {
                     String id = parts[0];
                     int stock = Integer.parseInt(parts[1]);
 
-                    DynamicPriceItem item = plugin.items().get(id);
+                    DynamicPriceItem item = plugin.shopService().item(id);
                     if (item != null) {
                         item.stock(stock);
                     }

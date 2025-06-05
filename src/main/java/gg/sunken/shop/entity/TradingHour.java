@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 @Data
-@Getter
 @Accessors(fluent = true)
 public class TradingHour {
 
