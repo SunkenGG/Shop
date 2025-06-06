@@ -6,8 +6,10 @@ import com.mongodb.client.MongoDatabase;
 import gg.sunken.shop.commands.DebugCommand;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.ItemTemplate;
+import gg.sunken.shop.redis.PriceSyncManager;
 import gg.sunken.shop.redis.RedisPriceSyncManager;
 import gg.sunken.shop.repository.DynamicPriceMongoRepository;
+import gg.sunken.shop.repository.DynamicPriceRepository;
 import gg.sunken.shop.services.ShopService;
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -30,8 +32,6 @@ public final class ShopPlugin extends JavaPlugin {
         return instance;
     }
 
-    private RedisPriceSyncManager syncManager;
-    private DynamicPriceMongoRepository repository;
     private ShopService shopService;
     private Economy economy;
 
@@ -46,15 +46,15 @@ public final class ShopPlugin extends JavaPlugin {
 
         InvUI.getInstance().setPlugin(this);
 
-        this.syncManager = new RedisPriceSyncManager(getConfig().getString("redis.uri"));
+        PriceSyncManager syncManager = new RedisPriceSyncManager(getConfig().getString("redis.uri"));
 
         MongoClient client = MongoClients.create(getConfig().getString("mongo.uri"));
         MongoDatabase database = client.getDatabase(getConfig().getString("mongo.database"));
-        this.repository = new DynamicPriceMongoRepository(database.getCollection("prices"), database.getCollection("transactions"));
+        DynamicPriceRepository repository = new DynamicPriceMongoRepository(database.getCollection("prices"), database.getCollection("transactions"));
 
-        this.shopService = new ShopService(this);
+        this.shopService = new ShopService(repository, syncManager);
 
-        Bukkit.getCommandMap().register("shop", new DebugCommand());
+        Bukkit.getCommandMap().register("shop", new DebugCommand(repository, syncManager));
     }
 
     @Override

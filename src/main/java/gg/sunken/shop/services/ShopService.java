@@ -4,6 +4,8 @@ import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.ItemTemplate;
 import gg.sunken.shop.provider.item.ItemProviders;
+import gg.sunken.shop.redis.PriceSyncManager;
+import gg.sunken.shop.repository.DynamicPriceRepository;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.java.Log;
@@ -23,64 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 @Accessors(fluent = true)
 public class ShopService {
 
-    private final Map<String, ItemTemplate> itemTemplates;
-    private final Map<String, DynamicPriceItem> items;
-    private final ShopPlugin plugin;
+    private final DynamicPriceRepository repository;
+    private final PriceSyncManager priceSyncManager;
 
-    public ShopService(ShopPlugin plugin) {
-        this.plugin = plugin;
-        this.itemTemplates = new ConcurrentHashMap<>();
-        final double price = plugin.getConfig().getDouble("default.price");
-        final double elasticity = plugin.getConfig().getDouble("default.elasticity");
-        final double support = plugin.getConfig().getDouble("default.support");
-        final double resistance = plugin.getConfig().getDouble("default.resistance");
-
-        final double minPrice = plugin.getConfig().getDouble("default.min-price", 0);
-        final double maxPrice = plugin.getConfig().getDouble("default.max-price", 0);
-        final double defaultBuyTax = plugin.getConfig().getDouble("default.buy-tax", 0);
-        final double defaultSellTax = plugin.getConfig().getDouble("default.sell-tax", 0);
-
-        for (String items : plugin.getConfig().getConfigurationSection("items").getKeys(false)) {
-            ConfigurationSection section = plugin.getConfig().getConfigurationSection("items." + items);
-            if (section == null) continue;
-
-            String id = section.getString("id");
-            if (id == null) continue;
-
-            double initialPrice = section.getDouble("price", price);
-            double elasticityValue = section.getDouble("elasticity", elasticity);
-            double supportValue = section.getDouble("support", support);
-            double resistanceValue = section.getDouble("resistance", resistance);
-
-            double minimumPrice = section.getDouble("min-price",  minPrice);
-            double maximumPrice = section.getDouble("max-price", maxPrice);
-            double buyTax = section.getDouble("buy-tax", defaultBuyTax);
-            double sellTax = section.getDouble("sell-tax", defaultSellTax);
-
-            ItemTemplate build = ItemTemplate.builder()
-                    .id(id)
-                    .initialPrice(initialPrice)
-                    .elasticity(elasticityValue)
-                    .support(supportValue)
-                    .resistance(resistanceValue)
-                    .minPrice(minimumPrice)
-                    .maxPrice(maximumPrice)
-                    .buyTax(buyTax)
-                    .sellTax(sellTax)
-                    .build();
-
-            itemTemplates.put(id, build);
-        }
-
-        this.items = new ConcurrentHashMap<>();
-        for (String key : itemTemplates.keySet()) {
-            DynamicPriceItem byId = plugin.repository().findById(key);
-            if (byId == null) {
-                byId = new DynamicPriceItem(key, itemTemplates.get(key));
-            }
-
-            items.put(key, byId);
-        }
+    public ShopService(DynamicPriceRepository repository, PriceSyncManager priceSyncManager) {
+        this.repository = repository;
+        this.priceSyncManager = priceSyncManager;
     }
 
     /**
@@ -140,9 +90,9 @@ public class ShopService {
             });
         }
 
-        plugin.repository().removeHistory(id, amount);
-        plugin.syncManager().updateStock(id, -amount);
-        plugin.repository().save(item);
+        repository.removeHistory(id, amount);
+        priceSyncManager.updateStock(id, -amount);
+        repository.save(item);
 
         return price;
     }
@@ -165,9 +115,9 @@ public class ShopService {
         }
 
         item.stock(item.stock() + amount);
-        plugin.repository().addHistory(id, amount);
-        plugin.syncManager().updateStock(id, amount);
-        plugin.repository().save(item);
+        repository.addHistory(id, amount);
+        priceSyncManager.updateStock(id, amount);
+        repository.save(item);
 
         itemStack.setAmount(itemStack.getAmount() - amount);
         if (itemStack.getAmount() <= 0) {
@@ -186,7 +136,7 @@ public class ShopService {
      * @throws IllegalArgumentException if the item does not exist
      */
     public double price(String id, int amount) {
-        DynamicPriceItem item = items().get(id);
+        DynamicPriceItem item = item(id);
         if (item == null) {
             throw new IllegalArgumentException("Item does not exist.");
         }
@@ -210,7 +160,7 @@ public class ShopService {
      */
     @Nullable
     public DynamicPriceItem item(String id) {
-        return items().get(id);
+        return repository.priceById(id);
     }
 
     /**
@@ -220,7 +170,7 @@ public class ShopService {
      * @return the ItemTemplate associated with the provided identifier, or null if not found
      */
     public ItemTemplate template(String id) {
-        return itemTemplates.get(id);
+        return repository.templateById(id);
     }
 
     private int roundUp(double number) {

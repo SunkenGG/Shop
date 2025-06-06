@@ -1,6 +1,9 @@
 package gg.sunken.shop.repository;
 
 import gg.sunken.shop.entity.DynamicPriceItem;
+import gg.sunken.shop.entity.ItemTemplate;
+
+import java.util.List;
 
 public interface DynamicPriceRepository {
 
@@ -14,4 +17,11 @@ public interface DynamicPriceRepository {
 
     void removeHistory(String id, int amount);
 
+    ItemTemplate templateById(String id);
+
+    DynamicPriceItem priceById(String id);
+
+    List<DynamicPriceItem> allPrices();
+
+    List<ItemTemplate> allTemplates();
 }

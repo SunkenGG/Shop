@@ -2,6 +2,13 @@ package gg.sunken.shop.commands;
 
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
+import gg.sunken.shop.entity.trades.NpcTrader;
+import gg.sunken.shop.entity.trades.impl.EconomyTrade;
+import gg.sunken.shop.provider.economy.EconomyProviders;
+import gg.sunken.shop.redis.PriceSyncManager;
+import gg.sunken.shop.redis.RedisPriceSyncManager;
+import gg.sunken.shop.repository.DynamicPriceRepository;
+import gg.sunken.shop.ui.NpcTraderUI;
 import lombok.extern.java.Log;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.defaults.BukkitCommand;
@@ -14,10 +21,13 @@ import java.util.List;
 public class DebugCommand extends BukkitCommand {
 
     private final ShopPlugin plugin = ShopPlugin.instance();
+    private final DynamicPriceRepository repository;
+    private final PriceSyncManager syncManager;
 
-
-    public DebugCommand() {
+    public DebugCommand(DynamicPriceRepository repository, PriceSyncManager syncManager) {
         super("ecodebug");
+        this.repository = repository;
+        this.syncManager = syncManager;
     }
 
     @Override
@@ -30,7 +40,8 @@ public class DebugCommand extends BukkitCommand {
 
         if (args.length == 1 && args[0].equalsIgnoreCase("testui")) {
             if (sender instanceof Player player) {
-
+                NpcTrader trader = new NpcTrader("paul", "Paul", List.of(new EconomyTrade(plugin, EconomyProviders.provider("vault"), "DIAMOND", 1)));
+                new NpcTraderUI(trader).open(player);
                 return true;
             }
         }
@@ -74,10 +85,10 @@ public class DebugCommand extends BukkitCommand {
                 return true;
             }
 
-            plugin.repository().addHistory(id, amount);
+            repository.addHistory(id, amount);
             double price = item.calculateTransactionPrice(amount);
-            plugin.syncManager().updateStock(id, amount);
-            plugin.repository().save(item);
+            syncManager.updateStock(id, amount);
+            repository.save(item);
             log.info("Selling " + amount + " of " + item.id() + " for " + price + " coins.");
             sender.sendMessage("Sold " + amount + " of " + item.id() + " for " + price + " coins.");
         }
@@ -96,10 +107,10 @@ public class DebugCommand extends BukkitCommand {
                 return true;
             }
 
-            plugin.repository().removeHistory(id, amount);
+            repository.removeHistory(id, amount);
             double price = item.calculateTransactionPrice(-amount);
-            plugin.syncManager().updateStock(id, -amount);
-            plugin.repository().save(item);
+            syncManager.updateStock(id, -amount);
+            repository.save(item);
             log.info("Buying " + amount + " of " + item.id() + " for " + price + " coins.");
             sender.sendMessage("Purchased " + amount + " of " + item.id() + " for " + price + " coins.");
         }
@@ -112,7 +123,7 @@ public class DebugCommand extends BukkitCommand {
         if (args.length == 1) {
             return List.of("sell", "buy", "check");
         } else if (args.length == 2 && (args[0].equalsIgnoreCase("sell") || args[0].equalsIgnoreCase("buy") || args[0].equalsIgnoreCase("check"))) {
-            return plugin.shopService().items().keySet().stream().toList();
+            return plugin.shopService().repository().allPrices().stream().map(DynamicPriceItem::id).toList();
         }
         return List.of();
     }

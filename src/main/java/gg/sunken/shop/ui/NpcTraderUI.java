@@ -60,7 +60,7 @@ public class NpcTraderUI {
 
         Window window = Window.single()
                 .setViewer(player)
-                .setTitle("Traders")
+                .setTitle("Traders - " + trader.name())
                 .setGui(pages.getFirst())
                 .build();
 
