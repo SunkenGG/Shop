@@ -65,14 +65,10 @@ public class DynamicPriceItem {
 
         int step = Integer.signum(newStock - currentStock);
 
-        double totalIntegral = 0.0;
+        double totalBaseIntegral = computeBaseIntegral(currentStock, newStock);
+        double totalAdjustedIntegral = computeAdjustedIntegral(currentStock, newStock);
 
-        for (int stock = currentStock; stock != newStock; stock += step) {
-            double upperBound = stock + step;
-            totalIntegral += computeBaseIntegral(stock, upperBound) + computeAdjustedIntegral(stock, upperBound);
-        }
-
-        return totalIntegral;
+        return totalBaseIntegral + totalAdjustedIntegral;
     }
 
     private double computeBaseIntegral(double lowerBound, double upperBound) {
