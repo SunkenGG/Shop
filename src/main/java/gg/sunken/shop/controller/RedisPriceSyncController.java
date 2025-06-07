@@ -44,7 +44,13 @@ public class RedisPriceSyncController implements PriceSyncController {
                     if (parts.length != 2) return;
 
                     String id = parts[0];
-                    int stock = Integer.parseInt(parts[1]);
+                    int stock;
+                    try {
+                        stock = Integer.parseInt(parts[1]);
+                    } catch (NumberFormatException e) {
+                        log.warning("Received malformed message on price-updates channel: " + message);
+                        return;
+                    }
 
                     DynamicPriceItem item = plugin.shopService().item(id);
                     if (item != null) {
