@@ -4,22 +4,23 @@ import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.ItemTemplate;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface DynamicPriceRepository {
 
-    void save(DynamicPriceItem item);
+    CompletableFuture<Void> save(DynamicPriceItem item);
 
-    DynamicPriceItem findById(String id);
+    CompletableFuture<DynamicPriceItem> findById(String id);
 
-    void deletePriceData(String id);
+    CompletableFuture<Void> deletePriceData(String id);
 
-    void addHistory(String id, int amount);
+    CompletableFuture<Void> addHistory(String id, int amount);
 
-    void removeHistory(String id, int amount);
+    CompletableFuture<Void> removeHistory(String id, int amount);
 
-    ItemTemplate templateById(String id);
+    ItemTemplate templateFromCache(String id);
 
-    DynamicPriceItem priceById(String id);
+    DynamicPriceItem priceFromCache(String id);
 
     List<DynamicPriceItem> allPrices();
 

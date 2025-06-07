@@ -100,6 +100,16 @@ public class DebugCommand extends BukkitCommand {
             return true;
         }
 
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("This command can only be used by players.");
+            return true;
+        }
+
+        if (amount <= 0) {
+            sender.sendMessage("Amount must be greater than 0.");
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("sell")) {
             DynamicPriceItem item = plugin.shopService().item(id);
             if (item == null) {

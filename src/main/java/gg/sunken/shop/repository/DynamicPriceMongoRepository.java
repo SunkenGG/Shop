@@ -15,12 +15,16 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 public class DynamicPriceMongoRepository implements DynamicPriceRepository {
 
     private final static ShopPlugin PLUGIN = ShopPlugin.instance();
     private final static ReplaceOptions UPSERT = new ReplaceOptions().upsert(true);
+    private final static Executor DATABASE_THREAD_POOL = Executors.newWorkStealingPool();
     private final MongoCollection<Document> itemCollection;
     private final MongoCollection<Document> dayCollection;
     private final Map<String, ItemTemplate> itemTemplates;
@@ -77,104 +81,115 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
 
         this.items = new ConcurrentHashMap<>();
         for (String key : itemTemplates.keySet()) {
-            DynamicPriceItem byId = findById(key);
-            if (byId == null) {
-                byId = new DynamicPriceItem(key, itemTemplates.get(key));
-            }
-
-            items.put(key, byId);
+            findById(key).thenAccept(item -> {
+                if (item != null) {
+                    items.put(key, item);
+                } else {
+                    DynamicPriceItem newItem = new DynamicPriceItem(key, itemTemplates.get(key));
+                    items.put(key, newItem);
+                    save(newItem);
+                }
+            }).exceptionally(ex -> {
+                PLUGIN.getLogger().severe("Failed to load item " + key + ": " + ex.getMessage());
+                return null;
+            });
         }
     }
 
     @Override
-    public void save(DynamicPriceItem item) {
-        Document doc = item.serialize();
-        itemCollection.replaceOne(new Document("_id", item.id()), doc, UPSERT);
+    public CompletableFuture<Void> save(DynamicPriceItem item) {
+        return CompletableFuture.runAsync(() -> {
+            Document doc = item.serialize();
+            itemCollection.replaceOne(new Document("_id", item.id()), doc, UPSERT);
+        }, DATABASE_THREAD_POOL);
     }
 
     @Override
-    public DynamicPriceItem findById(String id) {
-        Document doc = itemCollection.find(new Document("_id", id)).first();
-        if (doc == null) return null;
-        DynamicPriceItem item = new DynamicPriceItem(doc.getString("_id"), itemTemplates.get(id));
-        item.stock(doc.getInteger("stock", 0));
-        return item;
+    public CompletableFuture<DynamicPriceItem> findById(String id) {
+        return CompletableFuture.supplyAsync(() -> {
+            Document doc = itemCollection.find(new Document("_id", id)).first();
+            if (doc == null) return null;
+            DynamicPriceItem item = new DynamicPriceItem(doc.getString("_id"), itemTemplates.get(id));
+            item.stock(doc.getInteger("stock", 0));
+            return item;
+        }, DATABASE_THREAD_POOL);
     }
 
     @Override
-    public void deletePriceData(String id) {
-        itemCollection.deleteOne(new Document("_id", id));
+    public CompletableFuture<Void> deletePriceData(String id) {
+        return CompletableFuture.runAsync(() -> {
+            itemCollection.deleteOne(new Document("_id", id));
+        }, DATABASE_THREAD_POOL);
     }
 
     @Override
-    public void addHistory(String id, int amount) {
-        long hour = Instant.now().truncatedTo(ChronoUnit.HOURS).getEpochSecond();
+    public CompletableFuture<Void> addHistory(String id, int amount) {
+        return CompletableFuture.runAsync(() -> {
+            long hour = Instant.now().truncatedTo(ChronoUnit.HOURS).getEpochSecond();
 
-        Document existingDoc = dayCollection.find(
-                Filters.and(
-                        Filters.eq("itemId", id),
-                        Filters.eq("hourEnd", hour)
-                )
-        ).first();
+            Document existingDoc = dayCollection.find(
+                    Filters.and(
+                            Filters.eq("itemId", id),
+                            Filters.eq("hourEnd", hour)
+                    )
+            ).first();
 
-        if (existingDoc == null) {
-            int currentStock = getCurrentStock(id) + amount;
-            try {
+            if (existingDoc == null) {
+                dayCollection.insertOne(
+                        new Document("itemId", id)
+                                .append("hourEnd", hour)
+                                .append("amount", amount)
+                );
+            } else {
+                dayCollection.updateOne(
+                        Filters.and(
+                                Filters.eq("itemId", id),
+                                Filters.eq("hourEnd", hour)
+                        ),
+                        new Document("$inc", new Document("amount", amount))
+                );
+            }
+        }, DATABASE_THREAD_POOL);
+    }
+
+    @Override
+    public CompletableFuture<Void> removeHistory(String id, int amount) {
+        return CompletableFuture.runAsync(() -> {
+            long hour = Instant.now().truncatedTo(ChronoUnit.HOURS).getEpochSecond();
+
+            Document existingDoc = dayCollection.find(
+                    Filters.and(
+                            Filters.eq("itemId", id),
+                            Filters.eq("hourEnd", hour)
+                    )
+            ).first();
+
+            if (existingDoc == null) {
+                int currentStock = getCurrentStock(id) - amount;
                 dayCollection.insertOne(
                         new Document("itemId", id)
                                 .append("hourEnd", hour)
                                 .append("amount", currentStock)
                 );
-            } catch (MongoWriteException ignored) {
-                addHistory(id, amount);
+            } else {
+                dayCollection.updateOne(
+                        Filters.and(
+                                Filters.eq("itemId", id),
+                                Filters.eq("hourEnd", hour)
+                        ),
+                        new Document("$inc", new Document("amount", -amount))
+                );
             }
-        } else {
-            dayCollection.updateOne(
-                    Filters.and(
-                            Filters.eq("itemId", id),
-                            Filters.eq("hourEnd", hour)
-                    ),
-                    new Document("$inc", new Document("amount", amount))
-            );
-        }
+        }, DATABASE_THREAD_POOL);
     }
 
     @Override
-    public void removeHistory(String id, int amount) {
-        long hour = Instant.now().truncatedTo(ChronoUnit.HOURS).getEpochSecond();
-
-        Document existingDoc = dayCollection.find(
-                Filters.and(
-                        Filters.eq("itemId", id),
-                        Filters.eq("hourEnd", hour)
-                )
-        ).first();
-
-        if (existingDoc == null) {
-            int currentStock = getCurrentStock(id) - amount;
-            dayCollection.insertOne(
-                    new Document("itemId", id)
-                            .append("hourEnd", hour)
-                            .append("amount", currentStock)
-            );
-        } else {
-            dayCollection.updateOne(
-                    Filters.and(
-                            Filters.eq("itemId", id),
-                            Filters.eq("hourEnd", hour)
-                    ),
-                    new Document("$inc", new Document("amount", -amount))
-            );
-        }
-    }
-
-    @Override
-    public DynamicPriceItem priceById(String id) {
+    public DynamicPriceItem priceFromCache(String id) {
         return items.get(id);
     }
 
     @Override
-    public ItemTemplate templateById(String id) {
+    public ItemTemplate templateFromCache(String id) {
         return itemTemplates.get(id);
     }
 

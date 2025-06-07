@@ -332,7 +332,7 @@ public class ShopService {
      */
     @Nullable
     public DynamicPriceItem item(String id) {
-        return repository.priceById(id);
+        return repository.priceFromCache(id);
     }
 
     /**
@@ -342,7 +342,7 @@ public class ShopService {
      * @return the ItemTemplate associated with the provided identifier, or null if not found
      */
     public ItemTemplate template(String id) {
-        return repository.templateById(id);
+        return repository.templateFromCache(id);
     }
 
     /**
