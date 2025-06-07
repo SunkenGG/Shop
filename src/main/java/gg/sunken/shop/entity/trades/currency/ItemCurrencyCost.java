@@ -13,7 +13,12 @@ public class ItemCurrencyCost implements NpcCurrencyCost {
     private final ItemStack itemStack;
 
     @Override
-    public double cost() {
+    public double buyCost() {
+        return amount;
+    }
+
+    @Override
+    public double sellCost() {
         return amount;
     }
 
@@ -64,19 +69,18 @@ public class ItemCurrencyCost implements NpcCurrencyCost {
         int requiredAmount = this.amount;
         ItemStack[] inventory = player.getInventory().getContents();
 
-        for (ItemStack item : inventory) {
-            if (item != null && item.isSimilar(this.itemStack)) {
-                int itemAmount = item.getAmount();
-                if (itemAmount >= requiredAmount) {
-                    item.setAmount(itemAmount - requiredAmount);
-                    player.getInventory().setItem(player.getInventory().firstEmpty(), item);
-                    return amount;
-                } else {
-                    requiredAmount -= itemAmount;
-                    player.getInventory().removeItem(item);
+        for (ItemStack stack : inventory) {
+            if (stack != null && stack.isSimilar(this.itemStack)) {
+                int amountToRemove = Math.min(stack.getAmount(), requiredAmount);
+                stack.setAmount(stack.getAmount() - amountToRemove);
+                requiredAmount -= amountToRemove;
+
+                if (requiredAmount <= 0) {
+                    return this.amount;
                 }
             }
         }
+
         return 0; // Not enough items to withdraw
     }
 
@@ -100,7 +104,12 @@ public class ItemCurrencyCost implements NpcCurrencyCost {
     }
 
     @Override
-    public String descriptor() {
+    public String buyDescriptor() {
+        return "x" + (this.amount) + " " + StringUtils.formatEnum(itemId);
+    }
+
+    @Override
+    public String sellDescriptor() {
         return "x" + (this.amount) + " " + StringUtils.formatEnum(itemId);
     }
 }

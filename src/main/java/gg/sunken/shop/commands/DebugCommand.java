@@ -2,6 +2,7 @@ package gg.sunken.shop.commands;
 
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
+import gg.sunken.shop.entity.trades.NpcOffer;
 import gg.sunken.shop.entity.trades.NpcTrader;
 import gg.sunken.shop.entity.trades.currency.DynamicVaultCurrencyCost;
 import gg.sunken.shop.entity.trades.offers.ItemStackOffer;
@@ -16,6 +17,7 @@ import org.bukkit.command.defaults.BukkitCommand;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Log
@@ -24,11 +26,34 @@ public class DebugCommand extends BukkitCommand {
     private final ShopPlugin plugin = ShopPlugin.instance();
     private final DynamicPriceRepository repository;
     private final PriceSyncController syncManager;
+    private final NpcTrader trader;
 
     public DebugCommand(DynamicPriceRepository repository, PriceSyncController syncManager) {
         super("ecodebug");
         this.repository = repository;
         this.syncManager = syncManager;
+
+        List<NpcOffer> offers = new ArrayList<>();
+        String[] materials = {
+                // Ores and minerals
+                "DIAMOND", "GOLD_INGOT", "IRON_INGOT", "EMERALD", "COAL", "NETHERITE_INGOT", "REDSTONE",
+
+                // Wood types
+                "OAK_LOG", "SPRUCE_LOG", "BIRCH_LOG", "JUNGLE_LOG", "ACACIA_LOG", "DARK_OAK_LOG", "MANGROVE_LOG",
+                "CHERRY_LOG", "PALE_OAK_LOG", "BAMBOO_BLOCK", "CRIMSON_STEM", "WARPED_STEM",
+
+                // Stone and building materials
+                "STONE", "TUFF", "DEEPSLATE", "DIORITE", "ANDESITE", "GRANITE", "SAND", "GRAVEL", "CLAY_BALL",
+
+                // Miscellaneous
+                "OBSIDIAN", "NETHER_BRICK", "QUARTZ", "PRISMARINE", "GLASS", "WHITE_WOOL", "TERRACOTTA"
+        };
+
+        for (String material : materials) {
+            offers.add(createOffer(material));
+        }
+
+        trader = new NpcTrader("test_trader", "Test Trader", offers);
     }
 
     @Override
@@ -42,8 +67,6 @@ public class DebugCommand extends BukkitCommand {
         if (args.length == 1 && args[0].equalsIgnoreCase("testui")) {
             if (sender instanceof Player player) {
 
-                NpcTrader trader = new NpcTrader("test_trader", "Test Trader", List.of(
-                ));
                 NpcTraderUI ui = new NpcTraderUI(trader);
 
                 ui.open(player, null);
@@ -117,30 +140,33 @@ public class DebugCommand extends BukkitCommand {
         if (args.length == 1) {
             return List.of("sell", "buy", "check", "testui");
         } else if (args.length == 2) {
-            return plugin.shopService().items();
+            return plugin.shopService().items().stream()
+                    .map(DynamicPriceItem::id)
+                    .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .toList();
         } else if (args.length == 3 && (args[0].equalsIgnoreCase("sell") || args[0].equalsIgnoreCase("buy"))) {
             return List.of("1", "5", "10", "64");
         }
         return List.of();
     }
 
-    private ItemStackOffer createOffer(String id, int amount) {
+    private ItemStackOffer createOffer(String id) {
         // I know this is ugly A) test command & the line is long without it
         return new ItemStackOffer(
                 id,
-                amount,
+                1,
                 List.of(
                         new DynamicVaultCurrencyCost(
                                 (VaultEconomyProvider) EconomyProviders.VAULT,
                                 id,
-                                amount
+                                1
                         )
                 ),
                 List.of(
                         new DynamicVaultCurrencyCost(
                                 (VaultEconomyProvider) EconomyProviders.VAULT,
                                 id,
-                                amount
+                                1
                         )
                 )
 

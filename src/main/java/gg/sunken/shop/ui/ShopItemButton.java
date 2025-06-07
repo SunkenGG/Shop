@@ -25,10 +25,10 @@ public class ShopItemButton extends AbstractItem {
                         ""
                 );
         if (!offer.buyCost().isEmpty()) {
-            itemBuilder.addLoreLines("§7Buy Cost:");
+            itemBuilder.addLoreLines("§7Buy:");
             for (NpcCurrencyCost currency : offer.buyCost()) {
                 itemBuilder.addLoreLines(
-                        currency.descriptor()
+                        currency.buyDescriptor()
                 );
             }
 
@@ -38,10 +38,10 @@ public class ShopItemButton extends AbstractItem {
         }
 
         if (!offer.sellCost().isEmpty()) {
-            itemBuilder.addLoreLines("§7Sell Cost:");
-            for (NpcCurrencyCost currency : offer.sellCost()) {
+            itemBuilder.addLoreLines("§7Sell:");
+            for (NpcCurrencyCost currency : offer.sellReward()) {
                 itemBuilder.addLoreLines(
-                        currency.descriptor()
+                        currency.sellDescriptor()
                 );
             }
         }

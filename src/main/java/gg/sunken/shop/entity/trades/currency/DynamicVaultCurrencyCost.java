@@ -21,8 +21,13 @@ public class DynamicVaultCurrencyCost implements NpcCurrencyCost {
     }
 
     @Override
-    public double cost() {
-        return shopService.price(itemId, (int) amount);
+    public double buyCost() {
+        return shopService.buyPrice(itemId, (int) amount);
+    }
+
+    @Override
+    public double sellCost() {
+        return shopService.sellPrice(itemId, (int) amount);
     }
 
     @Override
@@ -45,7 +50,12 @@ public class DynamicVaultCurrencyCost implements NpcCurrencyCost {
     }
 
     @Override
-    public String descriptor() {
-        return String.format("$%1$,.2f", cost());
+    public String buyDescriptor() {
+        return String.format("$%1$,.2f", buyCost());
+    }
+
+    @Override
+    public String sellDescriptor() {
+        return String.format("$%1$,.2f", sellCost());
     }
 }

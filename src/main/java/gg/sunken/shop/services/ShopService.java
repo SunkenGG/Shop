@@ -57,6 +57,8 @@ public class ShopService {
             throw new IllegalArgumentException("Price cannot be zero.");
         }
 
+        price *= (1 + item.template().buyTax());
+
         if (!economyProvider.has(player, price)) {
             throw new IllegalArgumentException("Not enough money to buy this item.");
         }
@@ -109,7 +111,6 @@ public class ShopService {
         priceSyncController.updateStock(id, -amount);
         repository.save(item);
 
-
         return price;
     }
 
@@ -135,6 +136,8 @@ public class ShopService {
         if (price == 0) {
             throw new IllegalArgumentException("Price cannot be zero.");
         }
+
+        price *= (1 + item.template().buyTax());
 
         Optional<ItemStack> stack = ItemProviders.fromId(id);
         if (stack.isEmpty()) {
@@ -185,6 +188,8 @@ public class ShopService {
         if (price == 0) {
             throw new IllegalArgumentException("Price cannot be zero.");
         }
+
+        price *= (1 - item.template().sellTax());
 
         Optional<ItemStack> stack = ItemProviders.fromId(id);
         if (stack.isEmpty()) {
@@ -252,6 +257,8 @@ public class ShopService {
             throw new IllegalArgumentException("Price cannot be zero.");
         }
 
+        price *= (1 - item.template().sellTax());
+
         // check stock
         try {
             item.stock(item.stock() + amount);
@@ -274,12 +281,12 @@ public class ShopService {
      * @return the calculated price for the specified item and quantity
      * @throws IllegalArgumentException if the item does not exist
      */
-    public double price(String id, int amount) {
+    public double buyPrice(String id, int amount) {
         DynamicPriceItem item = item(id);
         if (item == null) {
             throw new IllegalArgumentException("Item does not exist.");
         }
-        return item.calculateTransactionPrice(amount);
+        return item.calculateTransactionPrice(amount) * (1 + item.template().buyTax());
     }
 
     /**
@@ -288,8 +295,34 @@ public class ShopService {
      * @param id the unique identifier of the product
      * @return the calculated price of the product
      */
-    public double price(String id) {
-        return price(id, 1);
+    public double buyPrice(String id) {
+        return buyPrice(id, 1);
+    }
+
+    /**
+     * Calculates the selling price of an item based on the provided item ID and quantity.
+     *
+     * @param id the unique identifier of the item to be sold
+     * @param amount the quantity of the item to be sold
+     * @return the total selling price after applying the item's transaction price and sell tax
+     * @throws IllegalArgumentException if the item with the specified ID does not exist
+     */
+    public double sellPrice(String id, int amount) {
+        DynamicPriceItem item = item(id);
+        if (item == null) {
+            throw new IllegalArgumentException("Item does not exist.");
+        }
+        return item.calculateTransactionPrice(amount) * (1 - item.template().sellTax());
+    }
+
+    /**
+     * Calculates the selling price for an item based on its ID and a default quantity of 1.
+     *
+     * @param id the unique identifier of the item
+     * @return the calculated selling price of the item
+     */
+    public double sellPrice(String id) {
+        return sellPrice(id, 1);
     }
 
     /**
@@ -312,6 +345,12 @@ public class ShopService {
         return repository.templateById(id);
     }
 
+    /**
+     * Retrieves a list of all DynamicPriceItem objects from the repository.
+     * If the repository returns null, an empty list is returned.
+     *
+     * @return a list of DynamicPriceItem objects; never null, an empty list if no items are available
+     */
     public @NotNull List<DynamicPriceItem> items() {
         List<DynamicPriceItem> items = repository.allPrices();
         if (items == null) {
@@ -320,6 +359,12 @@ public class ShopService {
         return items;
     }
 
+    /**
+     * Retrieves a list of all item templates from the repository.
+     * If no templates are found, returns an empty list.
+     *
+     * @return a list of item templates, or an empty list if none are available
+     */
     public @NotNull List<ItemTemplate> templates() {
         List<ItemTemplate> templates = repository.allTemplates();
         if (templates == null) {
@@ -328,6 +373,13 @@ public class ShopService {
         return templates;
     }
 
+    /**
+     * Adds an item template to the repository. This method ensures that the provided
+     * template is not null before adding it to the repository.
+     *
+     * @param template the item template to be added
+     * @throws IllegalArgumentException if the provided template is null
+     */
     public void template(ItemTemplate template) {
         if (template == null) {
             throw new IllegalArgumentException("Template cannot be null.");
@@ -335,6 +387,12 @@ public class ShopService {
         repository.addTemplate(template);
     }
 
+    /**
+     * Adds a dynamic price item to the repository.
+     *
+     * @param item the dynamic price item to be added. Must not be null.
+     * @throws IllegalArgumentException if the item is null.
+     */
     public void item(DynamicPriceItem item) {
         if (item == null) {
             throw new IllegalArgumentException("Item cannot be null.");
@@ -342,6 +400,12 @@ public class ShopService {
         repository.addDynamicPriceItem(item);
     }
 
+    /**
+     * Removes a template with the specified ID from the repository.
+     *
+     * @param id the unique identifier of the template to be removed; must not be null or empty
+     * @throws IllegalArgumentException if the provided ID is null or empty
+     */
     public void removeTemplate(String id) {
         if (id == null || id.isEmpty()) {
             throw new IllegalArgumentException("Template ID cannot be null or empty.");
@@ -349,6 +413,12 @@ public class ShopService {
         repository.removeTemplate(id);
     }
 
+    /**
+     * Removes an item identified by the given ID from the repository.
+     *
+     * @param id the unique identifier of the item to be removed. Must not be null or empty.
+     * @throws IllegalArgumentException if the provided ID is null or empty.
+     */
     public void removeItem(String id) {
         if (id == null || id.isEmpty()) {
             throw new IllegalArgumentException("Item ID cannot be null or empty.");

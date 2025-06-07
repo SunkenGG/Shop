@@ -4,7 +4,9 @@ import org.bukkit.entity.Player;
 
 public interface NpcCurrencyCost {
 
-    double cost();
+    double buyCost();
+
+    double sellCost();
 
     boolean has(Player player);
 
@@ -12,5 +14,7 @@ public interface NpcCurrencyCost {
 
     double deposit(Player player);
 
-    String descriptor();
+    String buyDescriptor();
+
+    String sellDescriptor();
 }
