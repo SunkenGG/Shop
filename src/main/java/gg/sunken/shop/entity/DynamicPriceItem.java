@@ -53,6 +53,10 @@ public class DynamicPriceItem {
      * @return Buy or sell amount for a given delta (always positive)
      **/
     public double calculateTransactionPrice(int delta) {
+        if (delta == 0) {
+            return 0.0;
+        }
+
         int newStock = stock + delta;
 
         double totalPrice = integratePrice(stock, newStock);
@@ -100,6 +104,10 @@ public class DynamicPriceItem {
     }
 
     private double computePrice(double stock) {
+        if (stock < minStock || stock > maxStock) {
+            throw new IllegalArgumentException("Stock must be between " + minStock + " and " + maxStock);
+        }
+        
         double price = template.initialPrice() * Math.exp(-stock * template.elasticity() * 0.0005);
 
         if (price < template.support()) price += (template.support() - price) * 0.1;
