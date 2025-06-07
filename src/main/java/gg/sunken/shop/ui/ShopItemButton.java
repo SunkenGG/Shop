@@ -32,12 +32,12 @@ public class ShopItemButton extends AbstractItem {
                 );
             }
 
-            if (!offer.sellCost().isEmpty()) {
+            if (!offer.sellReward().isEmpty()) {
                 itemBuilder.addLoreLines("");
             }
         }
 
-        if (!offer.sellCost().isEmpty()) {
+        if (!offer.sellReward().isEmpty()) {
             itemBuilder.addLoreLines("§7Sell:");
             for (NpcCurrencyCost currency : offer.sellReward()) {
                 itemBuilder.addLoreLines(

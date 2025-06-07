@@ -6,10 +6,14 @@ import lombok.extern.java.Log;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 @Log
 public class RedisPriceSyncController implements PriceSyncController {
 
     private final ShopPlugin plugin = ShopPlugin.instance();
+    private final Executor REDIS_POOL = Executors.newFixedThreadPool(1);
     private final Jedis subscriber;
     private final Jedis publisher;
 
@@ -22,7 +26,9 @@ public class RedisPriceSyncController implements PriceSyncController {
     public void updateStock(String id, int delta) {
         DynamicPriceItem item = plugin.shopService().item(id);
         if (item != null) {
-            publisher.publish("price-updates", id + ":" + item.stock());
+            REDIS_POOL.execute(() -> {
+                publisher.publish("price-updates", id + ":" + item.stock());
+            });
         } else {
             log.warning("Tried updating stock for non-existent item: " + id);
         }
