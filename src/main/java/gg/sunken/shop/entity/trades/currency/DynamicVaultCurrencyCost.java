@@ -39,7 +39,7 @@ public class DynamicVaultCurrencyCost implements NpcCurrencyCost {
     public double withdraw(Player player) {
         economyProvider.withdraw(player, buyCost());
         shopService.fakeBuy(itemId, (int) amount);
-        return amount;
+        return buyCost();
     }
 
     @Override
