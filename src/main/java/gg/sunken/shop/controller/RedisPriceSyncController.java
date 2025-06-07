@@ -1,20 +1,19 @@
-package gg.sunken.shop.redis;
+package gg.sunken.shop.controller;
 
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import lombok.extern.java.Log;
-import org.bukkit.Bukkit;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
 @Log
-public class RedisPriceSyncManager implements PriceSyncManager {
+public class RedisPriceSyncController implements PriceSyncController {
 
     private final ShopPlugin plugin = ShopPlugin.instance();
     private final Jedis subscriber;
     private final Jedis publisher;
 
-    public RedisPriceSyncManager(String uri) {
+    public RedisPriceSyncController(String uri) {
         this.subscriber = new Jedis(uri);
         this.publisher = new Jedis(uri);
         subscribe();

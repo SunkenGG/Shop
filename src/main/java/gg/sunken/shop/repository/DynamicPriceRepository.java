@@ -24,4 +24,12 @@ public interface DynamicPriceRepository {
     List<DynamicPriceItem> allPrices();
 
     List<ItemTemplate> allTemplates();
+
+    void addTemplate(ItemTemplate template);
+
+    void removeTemplate(String id);
+
+    void addDynamicPriceItem(DynamicPriceItem item);
+
+    void removeDynamicPriceItem(String id);
 }

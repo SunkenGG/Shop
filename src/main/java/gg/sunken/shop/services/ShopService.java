@@ -1,25 +1,22 @@
 package gg.sunken.shop.services;
 
-import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.ItemTemplate;
 import gg.sunken.shop.provider.economy.EconomyProvider;
 import gg.sunken.shop.provider.item.ItemProviders;
-import gg.sunken.shop.redis.PriceSyncManager;
+import gg.sunken.shop.controller.PriceSyncController;
 import gg.sunken.shop.repository.DynamicPriceRepository;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.extern.java.Log;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Log
 @Getter
@@ -27,11 +24,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ShopService {
 
     private final DynamicPriceRepository repository;
-    private final PriceSyncManager priceSyncManager;
+    private final PriceSyncController priceSyncController;
 
-    public ShopService(DynamicPriceRepository repository, PriceSyncManager priceSyncManager) {
+    public ShopService(DynamicPriceRepository repository, PriceSyncController priceSyncController) {
         this.repository = repository;
-        this.priceSyncManager = priceSyncManager;
+        this.priceSyncController = priceSyncController;
     }
 
     /**
@@ -109,9 +106,52 @@ public class ShopService {
 
         // update stock and history + publish to redis
         repository.removeHistory(id, amount);
-        priceSyncManager.updateStock(id, -amount);
+        priceSyncController.updateStock(id, -amount);
         repository.save(item);
 
+
+        return price;
+    }
+
+    /**
+     * Simulates a purchase of a specified quantity of an item without actually processing the transaction.
+     * This method calculates the price as if the transaction is completed, performs stock validation,
+     * updates internal records, and publishes the changes.
+     *
+     * @param id The unique identifier of the item to simulate buying.
+     * @param amount The quantity of the item to simulate purchasing. Must be positive and valid within available stock.
+     * @return The calculated price as if the transaction was made.
+     * @throws IllegalArgumentException If the item does not exist, the calculated price is zero, or there is insufficient stock.
+     */
+    public double fakeBuy(String id, int amount) throws IllegalArgumentException {
+        DynamicPriceItem item = item(id);
+        if (item == null) {
+            throw new IllegalArgumentException("Item does not exist.");
+        }
+
+        // calculate price as if transaction is made
+        double price = item.calculateTransactionPrice(-amount);
+
+        if (price == 0) {
+            throw new IllegalArgumentException("Price cannot be zero.");
+        }
+
+        Optional<ItemStack> stack = ItemProviders.fromId(id);
+        if (stack.isEmpty()) {
+            throw new IllegalArgumentException("Item does not exist.");
+        }
+
+        // check stock
+        try {
+            item.stock(item.stock() - amount);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Not enough space in stock.");
+        }
+
+        // update stock and history + publish to redis
+        repository.removeHistory(id, amount);
+        priceSyncController.updateStock(id, -amount);
+        repository.save(item);
 
         return price;
     }
@@ -180,11 +220,49 @@ public class ShopService {
         player.getInventory().removeItem(itemStack);
 
         repository.addHistory(id, amount);
-        priceSyncManager.updateStock(id, amount);
+        priceSyncController.updateStock(id, amount);
         repository.save(item);
 
         // give money to player
         economyProvider.deposit(player, price);
+        return price;
+    }
+
+    /**
+     * Simulates the sale of an item by calculating the transaction price
+     * for the given quantity, updating the stock, and maintaining the transaction history.
+     * Does not actually perform the sale, but adjusts internal records accordingly.
+     *
+     * @param id The unique identifier of the item to be "sold".
+     * @param amount The quantity of the item to simulate selling. Must be a positive integer.
+     * @return The transaction price calculated as if the sale were made.
+     * @throws IllegalArgumentException If the item does not exist, the calculated price is zero,
+     *                                   or there is insufficient space in stock to adjust.
+     */
+    public double fakeSell(String id, int amount) {
+        DynamicPriceItem item = item(id);
+        if (item == null) {
+            throw new IllegalArgumentException("Item does not exist.");
+        }
+
+        // calculate price as if transaction is made
+        double price = item.calculateTransactionPrice(amount);
+
+        if (price == 0) {
+            throw new IllegalArgumentException("Price cannot be zero.");
+        }
+
+        // check stock
+        try {
+            item.stock(item.stock() + amount);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Not enough space in stock.");
+        }
+
+        // update stock and history + publish to redis
+        repository.addHistory(id, amount);
+        priceSyncController.updateStock(id, amount);
+        repository.save(item);
         return price;
     }
 
@@ -234,8 +312,51 @@ public class ShopService {
         return repository.templateById(id);
     }
 
+    public @NotNull List<DynamicPriceItem> items() {
+        List<DynamicPriceItem> items = repository.allPrices();
+        if (items == null) {
+            return new ArrayList<>();
+        }
+        return items;
+    }
+
+    public @NotNull List<ItemTemplate> templates() {
+        List<ItemTemplate> templates = repository.allTemplates();
+        if (templates == null) {
+            return new ArrayList<>();
+        }
+        return templates;
+    }
+
+    public void template(ItemTemplate template) {
+        if (template == null) {
+            throw new IllegalArgumentException("Template cannot be null.");
+        }
+        repository.addTemplate(template);
+    }
+
+    public void item(DynamicPriceItem item) {
+        if (item == null) {
+            throw new IllegalArgumentException("Item cannot be null.");
+        }
+        repository.addDynamicPriceItem(item);
+    }
+
+    public void removeTemplate(String id) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Template ID cannot be null or empty.");
+        }
+        repository.removeTemplate(id);
+    }
+
+    public void removeItem(String id) {
+        if (id == null || id.isEmpty()) {
+            throw new IllegalArgumentException("Item ID cannot be null or empty.");
+        }
+        repository.removeDynamicPriceItem(id);
+    }
+
     private int roundUp(double number) {
         return (int) Math.ceil(number);
     }
-
 }

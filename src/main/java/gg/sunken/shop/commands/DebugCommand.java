@@ -3,10 +3,11 @@ package gg.sunken.shop.commands;
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.trades.NpcTrader;
-import gg.sunken.shop.entity.trades.impl.offers.ItemStackOffer;
-import gg.sunken.shop.entity.trades.impl.trades.VaultEconomyCurrency;
+import gg.sunken.shop.entity.trades.currency.DynamicVaultCurrencyCost;
+import gg.sunken.shop.entity.trades.offers.ItemStackOffer;
 import gg.sunken.shop.provider.economy.EconomyProviders;
-import gg.sunken.shop.redis.PriceSyncManager;
+import gg.sunken.shop.provider.economy.impl.VaultEconomyProvider;
+import gg.sunken.shop.controller.PriceSyncController;
 import gg.sunken.shop.repository.DynamicPriceRepository;
 import gg.sunken.shop.ui.NpcTraderUI;
 import lombok.extern.java.Log;
@@ -22,9 +23,9 @@ public class DebugCommand extends BukkitCommand {
 
     private final ShopPlugin plugin = ShopPlugin.instance();
     private final DynamicPriceRepository repository;
-    private final PriceSyncManager syncManager;
+    private final PriceSyncController syncManager;
 
-    public DebugCommand(DynamicPriceRepository repository, PriceSyncManager syncManager) {
+    public DebugCommand(DynamicPriceRepository repository, PriceSyncController syncManager) {
         super("ecodebug");
         this.repository = repository;
         this.syncManager = syncManager;
@@ -42,9 +43,6 @@ public class DebugCommand extends BukkitCommand {
             if (sender instanceof Player player) {
 
                 NpcTrader trader = new NpcTrader("test_trader", "Test Trader", List.of(
-                        new ItemStackOffer("DIAMOND", 1, List.of(
-                                new VaultEconomyCurrency(EconomyProviders.provider("vault"), )
-                        ))
                 ));
                 NpcTraderUI ui = new NpcTraderUI(trader);
 
@@ -87,18 +85,13 @@ public class DebugCommand extends BukkitCommand {
             }
 
             try {
-                item.stock(item.stock() - amount);
+                plugin.shopService().sell((Player) sender, id, amount, EconomyProviders.VAULT);
+                sender.sendMessage("Sold " + amount + " of " + item.id() + " for " + item.price() + " coins.");
             } catch (Exception e) {
-                sender.sendMessage("Not enough stock.");
-                return true;
+                sender.sendMessage("Transaction failed: " + e.getMessage());
             }
 
-            repository.addHistory(id, amount);
-            double price = item.calculateTransactionPrice(amount);
-            syncManager.updateStock(id, amount);
-            repository.save(item);
-            log.info("Selling " + amount + " of " + item.id() + " for " + price + " coins.");
-            sender.sendMessage("Sold " + amount + " of " + item.id() + " for " + price + " coins.");
+            return true;
         }
 
         if (args[0].equalsIgnoreCase("buy")) {
@@ -109,18 +102,11 @@ public class DebugCommand extends BukkitCommand {
             }
 
             try {
-                item.stock(item.stock() + amount);
+                plugin.shopService().buy((Player) sender, id, amount, EconomyProviders.VAULT);
+                sender.sendMessage("Bought " + amount + " of " + item.id() + " for " + item.price() + " coins.");
             } catch (Exception e) {
-                sender.sendMessage("Not enough space in stock.");
-                return true;
+                sender.sendMessage("Transaction failed: " + e.getMessage());
             }
-
-            repository.removeHistory(id, amount);
-            double price = item.calculateTransactionPrice(-amount);
-            syncManager.updateStock(id, -amount);
-            repository.save(item);
-            log.info("Buying " + amount + " of " + item.id() + " for " + price + " coins.");
-            sender.sendMessage("Purchased " + amount + " of " + item.id() + " for " + price + " coins.");
         }
 
         return true;
@@ -129,10 +115,35 @@ public class DebugCommand extends BukkitCommand {
     @Override
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         if (args.length == 1) {
-            return List.of("sell", "buy", "check");
-        } else if (args.length == 2 && (args[0].equalsIgnoreCase("sell") || args[0].equalsIgnoreCase("buy") || args[0].equalsIgnoreCase("check"))) {
-            return plugin.shopService().repository().allPrices().stream().map(DynamicPriceItem::id).toList();
+            return List.of("sell", "buy", "check", "testui");
+        } else if (args.length == 2) {
+            return plugin.shopService().items();
+        } else if (args.length == 3 && (args[0].equalsIgnoreCase("sell") || args[0].equalsIgnoreCase("buy"))) {
+            return List.of("1", "5", "10", "64");
         }
         return List.of();
+    }
+
+    private ItemStackOffer createOffer(String id, int amount) {
+        // I know this is ugly A) test command & the line is long without it
+        return new ItemStackOffer(
+                id,
+                amount,
+                List.of(
+                        new DynamicVaultCurrencyCost(
+                                (VaultEconomyProvider) EconomyProviders.VAULT,
+                                id,
+                                amount
+                        )
+                ),
+                List.of(
+                        new DynamicVaultCurrencyCost(
+                                (VaultEconomyProvider) EconomyProviders.VAULT,
+                                id,
+                                amount
+                        )
+                )
+
+        );
     }
 }

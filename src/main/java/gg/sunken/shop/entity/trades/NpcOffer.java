@@ -7,37 +7,55 @@ import java.util.List;
 
 public interface NpcOffer {
 
-    ItemStack receiveIcon();
+    List<NpcCurrencyCost> buyCost();
 
-    List<NpcCurrency> buyCost();
+    List<NpcCurrencyCost> buyReward();
 
-    List<NpcCurrency> sellCost();
+    List<NpcCurrencyCost> sellCost();
 
-    void buy(Player player);
+    List<NpcCurrencyCost> sellReward();
 
-    default boolean canBuy(Player player) {
-        boolean canTrade = true;
-        for (NpcCurrency npcCurrency : this.buyCost()) {
-            if (!npcCurrency.has(player)) {
-                canTrade = false;
-                break;
-            }
-        }
+    ItemStack icon();
 
-        return canTrade;
+    default boolean canBuy() {
+        return !buyCost().isEmpty() || !buyReward().isEmpty();
     }
 
-    void sell(Player player);
+    default boolean canBuy(Player player) {
+        if (!canBuy()) return false;
 
-    default boolean canSell(Player player) {
-        boolean canTrade = true;
-        for (NpcCurrency npcCurrency : this.sellCost()) {
-            if (!npcCurrency.has(player)) {
-                canTrade = false;
-                break;
+        for (NpcCurrencyCost cost : buyCost()) {
+            if (!cost.has(player)) {
+                return false;
             }
         }
 
-        return canTrade;
+        return true;
+    }
+
+    default void buy(Player player) {
+        buyCost().forEach(cost -> cost.withdraw(player));
+        buyReward().forEach(reward -> reward.deposit(player));
+    }
+
+    default boolean canSell() {
+        return !sellCost().isEmpty() || !sellReward().isEmpty();
+    }
+
+    default boolean canSell(Player player) {
+        if (!canSell()) return false;
+
+        for (NpcCurrencyCost cost : sellCost()) {
+            if (!cost.has(player)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    default void sell(Player player) {
+        sellCost().forEach(cost -> cost.withdraw(player));
+        sellReward().forEach(reward -> reward.deposit(player));
     }
 }

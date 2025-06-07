@@ -188,6 +188,40 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
         return List.copyOf(itemTemplates.values());
     }
 
+    @Override
+    public void addTemplate(ItemTemplate template) {
+        if (itemTemplates.containsKey(template.id())) {
+            throw new IllegalArgumentException("Template with id " + template.id() + " already exists.");
+        }
+        itemTemplates.put(template.id(), template);
+    }
+
+    @Override
+    public void addDynamicPriceItem(DynamicPriceItem item) {
+        if (items.containsKey(item.id())) {
+            throw new IllegalArgumentException("Item with id " + item.id() + " already exists.");
+        }
+        items.put(item.id(), item);
+        save(item);
+    }
+
+    @Override
+    public void removeTemplate(String id) {
+        if (!itemTemplates.containsKey(id)) {
+            throw new IllegalArgumentException("Template with id " + id + " does not exist.");
+        }
+        itemTemplates.remove(id);
+    }
+
+    @Override
+    public void removeDynamicPriceItem(String id) {
+        if (!items.containsKey(id)) {
+            throw new IllegalArgumentException("Item with id " + id + " does not exist.");
+        }
+        items.remove(id);
+        deletePriceData(id);
+    }
+
     private int getCurrentStock(String id) {
         DynamicPriceItem item = items.get(id);
         if (item == null) {

@@ -4,10 +4,8 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import gg.sunken.shop.commands.DebugCommand;
-import gg.sunken.shop.entity.DynamicPriceItem;
-import gg.sunken.shop.entity.ItemTemplate;
-import gg.sunken.shop.redis.PriceSyncManager;
-import gg.sunken.shop.redis.RedisPriceSyncManager;
+import gg.sunken.shop.controller.PriceSyncController;
+import gg.sunken.shop.controller.RedisPriceSyncController;
 import gg.sunken.shop.repository.DynamicPriceMongoRepository;
 import gg.sunken.shop.repository.DynamicPriceRepository;
 import gg.sunken.shop.services.ShopService;
@@ -15,13 +13,10 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.plugin.RegisteredServiceProvider;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.xenondevs.invui.InvUI;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Getter
 @Accessors(fluent = true)
@@ -46,13 +41,14 @@ public final class ShopPlugin extends JavaPlugin {
 
         InvUI.getInstance().setPlugin(this);
 
-        PriceSyncManager syncManager = new RedisPriceSyncManager(getConfig().getString("redis.uri"));
+        PriceSyncController syncManager = new RedisPriceSyncController(getConfig().getString("redis.uri"));
 
         MongoClient client = MongoClients.create(getConfig().getString("mongo.uri"));
         MongoDatabase database = client.getDatabase(getConfig().getString("mongo.database"));
         DynamicPriceRepository repository = new DynamicPriceMongoRepository(database.getCollection("prices"), database.getCollection("transactions"));
 
         this.shopService = new ShopService(repository, syncManager);
+        Bukkit.getServicesManager().register(ShopService.class, shopService, this, ServicePriority.Normal);
 
         Bukkit.getCommandMap().register("shop", new DebugCommand(repository, syncManager));
     }

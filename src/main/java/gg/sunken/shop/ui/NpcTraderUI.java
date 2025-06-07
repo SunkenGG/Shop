@@ -1,7 +1,7 @@
 package gg.sunken.shop.ui;
 
+import gg.sunken.shop.entity.trades.NpcCurrencyCost;
 import gg.sunken.shop.entity.trades.NpcOffer;
-import gg.sunken.shop.entity.trades.NpcCurrency;
 import gg.sunken.shop.entity.trades.NpcTrader;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -35,33 +35,17 @@ public class NpcTraderUI {
             return;
         }
 
-        List<SimpleItem> items = new ArrayList<>();
+        int row = 1;
+        int column = 1;
+
         for (NpcOffer offer : trades) {
-            ItemBuilder itemBuilder = new ItemBuilder(offer.receiveIcon())
-                    .addLoreLines(
-                            ""
-                    );
-            if (!offer.buyCost().isEmpty()) {
-                itemBuilder.addLoreLines("§7Buy Cost:");
-                for (NpcCurrency trade : offer.buyCost()) {
-                    itemBuilder.addLoreLines("§7- " + trade.description());
-                }
-
-                if (!offer.sellCost().isEmpty()) {
-                    itemBuilder.addLoreLines("");
-                }
+            ShopItemButton button = new ShopItemButton(offer);
+            if (column > 8) {
+                column = 1;
+                row++;
             }
-
-            if (!offer.sellCost().isEmpty()) {
-                itemBuilder.addLoreLines("§7Sell Cost:");
-                for (NpcCurrency trade : offer.sellCost()) {
-                    itemBuilder.addLoreLines("§7- " + trade.description());
-                }
-            }
-
-            SimpleItem item = new SimpleItem(itemBuilder);
-
-            items.add(item);
+            gui.setItem(row, column, button);
+            column++;
         }
     }
 

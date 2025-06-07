@@ -16,6 +16,9 @@ public class EconomyProviders {
         ECONOMY_PROVIDERS.put("exp", new ExperienceEconomyProvider());
     }
 
+    public static EconomyProvider VAULT = ECONOMY_PROVIDERS.get("vault");
+    public static EconomyProvider EXPERIENCE = ECONOMY_PROVIDERS.get("exp");
+
     public static EconomyProvider provider(String name) {
         return ECONOMY_PROVIDERS.get(name);
     }
