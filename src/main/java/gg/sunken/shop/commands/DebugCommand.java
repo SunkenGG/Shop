@@ -93,8 +93,13 @@ public class DebugCommand extends BukkitCommand {
         if (args.length >= 2) {
             id = args[1];
             if (args.length >= 3) {
-                amount = Integer.parseInt(args[2]);
-            }
+                try {
+                    amount = Integer.parseInt(args[2]);
+                } catch (NumberFormatException e) {
+                    sender.sendMessage("Invalid amount. Please enter a valid number.");
+                   return true;
+               }
+           }
         } else {
             sender.sendMessage("/ecodebug <sell/buy/check> <id> [amount]");
             return true;
