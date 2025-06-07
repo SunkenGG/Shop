@@ -67,8 +67,6 @@ public class DynamicPriceItem {
         currentStock = (int) Math.max(minStock, Math.min(currentStock, maxStock));
         newStock = (int) Math.max(minStock, Math.min(newStock, maxStock));
 
-        int step = Integer.signum(newStock - currentStock);
-
         double totalBaseIntegral = computeBaseIntegral(currentStock, newStock);
         double totalAdjustedIntegral = computeAdjustedIntegral(currentStock, newStock);
 
@@ -107,7 +105,7 @@ public class DynamicPriceItem {
         if (stock < minStock || stock > maxStock) {
             throw new IllegalArgumentException("Stock must be between " + minStock + " and " + maxStock);
         }
-        
+
         double price = template.initialPrice() * Math.exp(-stock * template.elasticity() * 0.0005);
 
         if (price < template.support()) price += (template.support() - price) * 0.1;
