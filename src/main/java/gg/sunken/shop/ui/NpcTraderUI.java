@@ -1,13 +1,13 @@
 package gg.sunken.shop.ui;
 
-import gg.sunken.shop.entity.trades.NpcTrade;
+import gg.sunken.shop.entity.trades.NpcOffer;
+import gg.sunken.shop.entity.trades.NpcCurrency;
 import gg.sunken.shop.entity.trades.NpcTrader;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import xyz.xenondevs.invui.gui.Gui;
-import xyz.xenondevs.invui.item.Item;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.SimpleItem;
 import xyz.xenondevs.invui.window.Window;
@@ -20,48 +20,58 @@ import java.util.List;
 public class NpcTraderUI {
 
     private final NpcTrader trader;
-    private final List<Gui> pages = new ArrayList<>();
-    private int page = 0;
+    private final Gui gui;
 
     public NpcTraderUI(NpcTrader trader) {
         this.trader = trader;
 
-        final int itemsPerPage = 6;
-        final int rowSize = 9;
-        final int tradesColumn = 0;
+        gui = Gui.empty(9, 6);
+        List<NpcOffer> trades = trader.trades();
 
-        final List<Gui> pages = new ArrayList<>();
-        for (int pageIndex = 0; pageIndex < trader.trades().size(); pageIndex += itemsPerPage) {
-            List<NpcTrade> trades = trader.trades()
-                    .subList(pageIndex, Math.min(pageIndex + itemsPerPage, trader.trades().size()));
+        if (trades.isEmpty()) {
+            gui.setItem(1, 1, new SimpleItem(new ItemBuilder(Material.BARRIER)
+                    .setDisplayName("§cNo trades available")
+                    .addLoreLines("§7This trader has no trades available at the moment.")));
+            return;
+        }
 
-            Gui page = Gui.empty(rowSize, 6);
+        List<SimpleItem> items = new ArrayList<>();
+        for (NpcOffer offer : trades) {
+            ItemBuilder itemBuilder = new ItemBuilder(offer.receiveIcon())
+                    .addLoreLines(
+                            ""
+                    );
+            if (!offer.buyCost().isEmpty()) {
+                itemBuilder.addLoreLines("§7Buy Cost:");
+                for (NpcCurrency trade : offer.buyCost()) {
+                    itemBuilder.addLoreLines("§7- " + trade.description());
+                }
 
-            for (int tradeIndex = 0; tradeIndex < trades.size(); tradeIndex++) {
-                int tradeSlot = tradeIndex * rowSize + tradesColumn;
-
-                NpcTrade npcTrade = trades.get(tradeIndex);
-
-                page.setItem(tradeSlot, new TraderGivingItem(npcTrade));
-                page.setItem(tradeSlot + 1, new SimpleItem(new ItemBuilder(Material.SPECTRAL_ARROW)));
-                page.setItem(tradeSlot + 2, new TraderReceiveItem(npcTrade));
+                if (!offer.sellCost().isEmpty()) {
+                    itemBuilder.addLoreLines("");
+                }
             }
 
-            pages.add(page);
-        }
+            if (!offer.sellCost().isEmpty()) {
+                itemBuilder.addLoreLines("§7Sell Cost:");
+                for (NpcCurrency trade : offer.sellCost()) {
+                    itemBuilder.addLoreLines("§7- " + trade.description());
+                }
+            }
 
-        this.pages.addAll(pages);
+            SimpleItem item = new SimpleItem(itemBuilder);
+
+            items.add(item);
+        }
     }
 
-    public void open(Player player) {
-        if (page < 0 || page >= pages.size()) {
-            throw new IndexOutOfBoundsException("Page index out of bounds: " + page);
-        }
+    public void open(Player player, String title) {
+        title = title == null ? trader.name() : title;
 
         Window window = Window.single()
                 .setViewer(player)
-                .setTitle("Traders - " + trader.name())
-                .setGui(pages.getFirst())
+                .setTitle(title)
+                .setGui(gui)
                 .build();
 
         window.open();

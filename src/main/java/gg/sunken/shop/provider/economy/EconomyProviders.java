@@ -1,5 +1,6 @@
 package gg.sunken.shop.provider.economy;
 
+import gg.sunken.shop.provider.economy.impl.ExperienceEconomyProvider;
 import gg.sunken.shop.provider.economy.impl.VaultEconomyProvider;
 
 import java.util.List;
@@ -12,6 +13,7 @@ public class EconomyProviders {
 
     static {
         ECONOMY_PROVIDERS.put("vault", new VaultEconomyProvider());
+        ECONOMY_PROVIDERS.put("exp", new ExperienceEconomyProvider());
     }
 
     public static EconomyProvider provider(String name) {

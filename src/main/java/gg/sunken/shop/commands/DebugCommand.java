@@ -3,10 +3,10 @@ package gg.sunken.shop.commands;
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.trades.NpcTrader;
-import gg.sunken.shop.entity.trades.impl.EconomyTrade;
+import gg.sunken.shop.entity.trades.impl.offers.ItemStackOffer;
+import gg.sunken.shop.entity.trades.impl.trades.VaultEconomyCurrency;
 import gg.sunken.shop.provider.economy.EconomyProviders;
 import gg.sunken.shop.redis.PriceSyncManager;
-import gg.sunken.shop.redis.RedisPriceSyncManager;
 import gg.sunken.shop.repository.DynamicPriceRepository;
 import gg.sunken.shop.ui.NpcTraderUI;
 import lombok.extern.java.Log;
@@ -40,8 +40,16 @@ public class DebugCommand extends BukkitCommand {
 
         if (args.length == 1 && args[0].equalsIgnoreCase("testui")) {
             if (sender instanceof Player player) {
-                NpcTrader trader = new NpcTrader("paul", "Paul", List.of(new EconomyTrade(plugin, EconomyProviders.provider("vault"), "DIAMOND", 1)));
-                new NpcTraderUI(trader).open(player);
+
+                NpcTrader trader = new NpcTrader("test_trader", "Test Trader", List.of(
+                        new ItemStackOffer("DIAMOND", 1, List.of(
+                                new VaultEconomyCurrency(EconomyProviders.provider("vault"), )
+                        ))
+                ));
+                NpcTraderUI ui = new NpcTraderUI(trader);
+
+                ui.open(player, null);
+
                 return true;
             }
         }

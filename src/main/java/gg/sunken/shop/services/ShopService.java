@@ -3,6 +3,7 @@ package gg.sunken.shop.services;
 import gg.sunken.shop.ShopPlugin;
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.ItemTemplate;
+import gg.sunken.shop.provider.economy.EconomyProvider;
 import gg.sunken.shop.provider.item.ItemProviders;
 import gg.sunken.shop.redis.PriceSyncManager;
 import gg.sunken.shop.repository.DynamicPriceRepository;
@@ -34,36 +35,41 @@ public class ShopService {
     }
 
     /**
-     * Processes the purchase of a specified item for the given player.
-     * Deducts stock for the item, calculates the transaction price, and adds the item
-     * to the player's inventory if sufficient inventory space is available.
-     * Throws an exception if the item does not exist, stock is insufficient, or the inventory has insufficient space.
+     * Facilitates the purchase of an item by a player, deducts the appropriate amount of money
+     * from the player's account, adds the item to the player's inventory, and updates item stock.
      *
-     * @param player The player performing the purchase.
-     * @param id The unique identifier of the item to be purchased.
-     * @param amount The quantity of the item to be purchased.
-     * @return The total price for the purchased items.
-     * @throws IllegalArgumentException If the item does not exist, there is insufficient stock, or the player's inventory is full.
+     * @param player The player who is buying the item.
+     * @param id The unique identifier of the item being purchased.
+     * @param amount The quantity of the item the player wants to purchase.
+     * @param economyProvider The economy provider responsible for handling player transactions.
+     * @return The total price of the purchased items.
+     * @throws IllegalArgumentException if the item does not exist, the price is zero,
+     *                                  the player does not have sufficient funds, the player does not
+     *                                  have enough inventory space, or there is insufficient stock.
      */
-    public double buy(Player player, String id, int amount) throws IllegalArgumentException {
+    public double buy(Player player, String id, int amount, EconomyProvider economyProvider) throws IllegalArgumentException {
         DynamicPriceItem item = item(id);
         if (item == null) {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
-        try {
-            item.stock(item.stock() - amount);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Not enough space in stock.");
+        // calculate price as if transaction is made
+        double price = item.calculateTransactionPrice(-amount);
+
+        if (price == 0) {
+            throw new IllegalArgumentException("Price cannot be zero.");
         }
 
-        double price = item.calculateTransactionPrice(-amount);
+        if (!economyProvider.has(player, price)) {
+            throw new IllegalArgumentException("Not enough money to buy this item.");
+        }
 
         Optional<ItemStack> stack = ItemProviders.fromId(id);
         if (stack.isEmpty()) {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
+        // check if player has enough space
         ItemStack itemStack = stack.get();
         int neededSlots = roundUp(amount * itemStack.getAmount());
         if (player.getInventory().firstEmpty() == -1) {
@@ -75,6 +81,14 @@ public class ShopService {
             throw new IllegalArgumentException("Not enough space in inventory.");
         }
 
+        // check stock
+        try {
+            item.stock(item.stock() - amount);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Not enough space in stock.");
+        }
+
+        // give items to player
         int amountToGive = amount;
         List<ItemStack> toGive = new ArrayList<>();
         while (amountToGive > 0) {
@@ -90,41 +104,88 @@ public class ShopService {
             });
         }
 
+        // charge player
+        economyProvider.withdraw(player, price);
+
+        // update stock and history + publish to redis
         repository.removeHistory(id, amount);
         priceSyncManager.updateStock(id, -amount);
         repository.save(item);
 
+
         return price;
     }
 
-    public void sell(Player player, String id, int amount) {
+    /**
+     * Sells a specified amount of an item from a player's inventory, adjusts the item's stock,
+     * generates a transaction price, and deposits the price into the player's account using the provided economy provider.
+     *
+     * @param player The player performing the sell action.
+     *               This is the source of the item and recipient of the transaction payment.
+     * @param id The unique identifier of the item to be sold.
+     *           This is used to locate the item and validate its presence in both inventory and repository.
+     * @param amount The quantity of the item to be sold.
+     *               This determines the stock adjustment and the transaction's total price.
+     * @param economyProvider The economy provider responsible for depositing the calculated price into the player's account.
+     *                        This ensures the player is paid appropriately after the transaction.
+     * @return The total price of the transaction based on the item's dynamic pricing and the specified amount.
+     * @throws IllegalArgumentException If the item does not exist, the price is zero,
+     *                                  the player does not have enough inventory space or items,
+     *                                  or the item's stock cannot accommodate the transaction.
+     */
+    public double sell(Player player, String id, int amount, EconomyProvider economyProvider) {
         DynamicPriceItem item = item(id);
         if (item == null) {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
+        // calculate price as if transaction is made
         double price = item.calculateTransactionPrice(amount);
 
-        ItemStack itemStack = player.getInventory().getItemInMainHand();
-        if (itemStack == null || !itemStack.getType().isItem()) {
-            throw new IllegalArgumentException("You must hold the item in your hand to sell it.");
+        if (price == 0) {
+            throw new IllegalArgumentException("Price cannot be zero.");
         }
 
-        if (itemStack.getAmount() < amount) {
-            throw new IllegalArgumentException("Not enough items in hand to sell.");
+        Optional<ItemStack> stack = ItemProviders.fromId(id);
+        if (stack.isEmpty()) {
+            throw new IllegalArgumentException("Item does not exist.");
         }
 
-        item.stock(item.stock() + amount);
+        ItemStack itemStack = stack.get();
+        int neededSlots = roundUp(amount * itemStack.getAmount());
+        if (neededSlots > player.getInventory().getStorageContents().length) {
+            throw new IllegalArgumentException("Not enough space in inventory.");
+        }
+
+        // check if player has enough items
+        int totalAmount = 0;
+        for (ItemStack content : player.getInventory().getContents()) {
+            if (content != null && content.isSimilar(itemStack)) {
+                totalAmount += content.getAmount();
+            }
+        }
+
+        if (totalAmount < amount) {
+            throw new IllegalArgumentException("Not enough items to sell.");
+        }
+
+        // update stock and history + publish to redis
+        try {
+            item.stock(item.stock() + amount);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Not enough space in stock.");
+        }
+
+        // remove items from player
+        player.getInventory().removeItem(itemStack);
+
         repository.addHistory(id, amount);
         priceSyncManager.updateStock(id, amount);
         repository.save(item);
 
-        itemStack.setAmount(itemStack.getAmount() - amount);
-        if (itemStack.getAmount() <= 0) {
-            player.getInventory().setItemInMainHand(null);
-        } else {
-            player.getInventory().setItemInMainHand(itemStack);
-        }
+        // give money to player
+        economyProvider.deposit(player, price);
+        return price;
     }
 
     /**

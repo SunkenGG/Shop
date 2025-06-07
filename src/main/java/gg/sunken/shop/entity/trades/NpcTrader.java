@@ -10,5 +10,5 @@ import java.util.List;
 public class NpcTrader {
     private final String id;
     private final String name;
-    private final List<NpcTrade> trades;
+    private final List<NpcOffer> trades;
 }
