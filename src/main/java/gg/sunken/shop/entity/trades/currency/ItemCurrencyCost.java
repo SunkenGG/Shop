@@ -81,7 +81,7 @@ public class ItemCurrencyCost implements NpcCurrencyCost {
             }
         }
 
-        return 0; // Not enough items to withdraw
+        return 0; // This line should never be reached
     }
 
     @Override
