@@ -12,8 +12,8 @@ import java.util.concurrent.Executors;
 @Log
 public class RedisPriceSyncController implements PriceSyncController {
 
+    private static final Executor REDIS_POOL = Executors.newFixedThreadPool(1);
     private final ShopPlugin plugin = ShopPlugin.instance();
-    private final Executor REDIS_POOL = Executors.newFixedThreadPool(1);
     private final Jedis subscriber;
     private final Jedis publisher;
 
