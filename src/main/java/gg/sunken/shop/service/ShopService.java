@@ -1,4 +1,4 @@
-package gg.sunken.shop.services;
+package gg.sunken.shop.service;
 
 import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.ItemTemplate;
@@ -50,7 +50,11 @@ public class ShopService {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
-        // calculate price as if transaction is made
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+
+        // calculate price as if the transaction is made
         double price = item.calculateTransactionPrice(-amount);
 
         if (price == 0) {
@@ -68,9 +72,9 @@ public class ShopService {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
-        // check if player has enough space
+        // check if a player has enough space
         ItemStack itemStack = stack.get();
-        int neededSlots = roundUp(amount * itemStack.getAmount());
+        int neededSlots = roundUp((double) amount * itemStack.getAmount());
         if (player.getInventory().firstEmpty() == -1) {
             throw new IllegalArgumentException("Not enough space in inventory.");
         }
@@ -98,9 +102,9 @@ public class ShopService {
         }
 
         for (ItemStack stackToGive : toGive) {
-            player.getInventory().addItem(stackToGive).forEach((integer, itemStack1) -> {
-                player.getWorld().dropItemNaturally(player.getLocation(), itemStack1);
-            });
+            player.getInventory().addItem(stackToGive)
+                    .forEach((integer, itemStack1) ->
+                            player.getWorld().dropItemNaturally(player.getLocation(), itemStack1));
         }
 
         // charge player
@@ -115,7 +119,7 @@ public class ShopService {
     }
 
     /**
-     * Simulates a purchase of a specified quantity of an item without actually processing the transaction.
+     * Simulates a purchase of a specified quantity for an item without actually processing the transaction.
      * This method calculates the price as if the transaction is completed, performs stock validation,
      * updates internal records, and publishes the changes.
      *
@@ -130,7 +134,11 @@ public class ShopService {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
-        // calculate price as if transaction is made
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+
+        // calculate price as if the transaction is made
         double price = item.calculateTransactionPrice(-amount);
 
         if (price == 0) {
@@ -151,7 +159,7 @@ public class ShopService {
             throw new IllegalArgumentException("Not enough space in stock.");
         }
 
-        // update stock and history + publish to redis
+        // update stock and history and publish to redis
         repository.removeHistory(id, amount);
         priceSyncController.updateStock(id, -amount);
         repository.save(item);
@@ -182,7 +190,11 @@ public class ShopService {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
-        // calculate price as if transaction is made
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+
+        // calculate price as if the transaction is made
         double price = item.calculateTransactionPrice(amount);
 
         if (price == 0) {
@@ -197,12 +209,12 @@ public class ShopService {
         }
 
         ItemStack itemStack = stack.get();
-        int neededSlots = roundUp(amount * itemStack.getAmount());
+        int neededSlots = roundUp((double) amount * itemStack.getAmount()) / itemStack.getMaxStackSize();
         if (neededSlots > player.getInventory().getStorageContents().length) {
             throw new IllegalArgumentException("Not enough space in inventory.");
         }
 
-        // check if player has enough items
+        // check if a player has enough items
         int totalAmount = 0;
         for (ItemStack content : player.getInventory().getContents()) {
             if (content != null && content.isSimilar(itemStack)) {
@@ -214,14 +226,14 @@ public class ShopService {
             throw new IllegalArgumentException("Not enough items to sell.");
         }
 
-        // update stock and history + publish to redis
+        // update stock and history and publish to redis
         try {
             item.stock(item.stock() + amount);
         } catch (Exception e) {
             throw new IllegalArgumentException("Not enough space in stock.");
         }
 
-        // remove items from player
+        // remove items from the player
         player.getInventory().removeItem(itemStack);
 
         repository.addHistory(id, amount);
@@ -236,7 +248,7 @@ public class ShopService {
     /**
      * Simulates the sale of an item by calculating the transaction price
      * for the given quantity, updating the stock, and maintaining the transaction history.
-     * Does not actually perform the sale, but adjusts internal records accordingly.
+     * Does not perform the sale but adjusts internal records accordingly.
      *
      * @param id The unique identifier of the item to be "sold".
      * @param amount The quantity of the item to simulate selling. Must be a positive integer.
@@ -250,7 +262,11 @@ public class ShopService {
             throw new IllegalArgumentException("Item does not exist.");
         }
 
-        // calculate price as if transaction is made
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+
+        // calculate price as if the transaction is made
         double price = item.calculateTransactionPrice(amount);
 
         if (price == 0) {
@@ -282,6 +298,10 @@ public class ShopService {
      * @throws IllegalArgumentException if the item does not exist
      */
     public double buyPrice(String id, int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+
         DynamicPriceItem item = item(id);
         if (item == null) {
             throw new IllegalArgumentException("Item does not exist.");
@@ -308,6 +328,10 @@ public class ShopService {
      * @throws IllegalArgumentException if the item with the specified ID does not exist
      */
     public double sellPrice(String id, int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be positive.");
+        }
+
         DynamicPriceItem item = item(id);
         if (item == null) {
             throw new IllegalArgumentException("Item does not exist.");
@@ -372,6 +396,7 @@ public class ShopService {
         }
         return templates;
     }
+
 
     /**
      * Adds an item template to the repository. This method ensures that the provided

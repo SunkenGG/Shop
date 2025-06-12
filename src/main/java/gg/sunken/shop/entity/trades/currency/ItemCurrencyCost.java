@@ -12,16 +12,6 @@ public class ItemCurrencyCost implements NpcCurrencyCost {
     private final int amount;
     private final ItemStack itemStack;
 
-    @Override
-    public double buyCost() {
-        return amount;
-    }
-
-    @Override
-    public double sellCost() {
-        return amount;
-    }
-
     public ItemCurrencyCost(String itemId, int amount) {
         if (itemId == null || itemId.isEmpty()) {
             throw new IllegalArgumentException("Item ID cannot be null or empty.");
@@ -38,6 +28,16 @@ public class ItemCurrencyCost implements NpcCurrencyCost {
                 () -> new IllegalArgumentException("Item ID " + itemId + " does not exist."));
 
         this.itemStack.setAmount(amount);
+    }
+
+    @Override
+    public double buyCost() {
+        return amount;
+    }
+
+    @Override
+    public double sellCost() {
+        return amount;
     }
 
     @Override

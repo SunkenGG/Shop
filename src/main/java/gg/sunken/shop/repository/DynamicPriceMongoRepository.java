@@ -13,6 +13,7 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -81,18 +82,14 @@ public class DynamicPriceMongoRepository implements DynamicPriceRepository {
 
         this.items = new ConcurrentHashMap<>();
         for (String key : itemTemplates.keySet()) {
-            findById(key).thenAccept(item -> {
-                if (item != null) {
-                    items.put(key, item);
-                } else {
-                    DynamicPriceItem newItem = new DynamicPriceItem(key, itemTemplates.get(key));
-                    items.put(key, newItem);
-                    save(newItem);
-                }
-            }).exceptionally(ex -> {
-                PLUGIN.getLogger().severe("Failed to load item " + key + ": " + ex.getMessage());
-                return null;
-            });
+            DynamicPriceItem priceItem = findById(key).join();
+            if (priceItem == null) {
+                priceItem = new DynamicPriceItem(key, itemTemplates.get(key));
+                priceItem.stock(0);
+                addDynamicPriceItem(priceItem);
+            } else {
+                items.put(key, priceItem);
+            }
         }
     }
 

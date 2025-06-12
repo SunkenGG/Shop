@@ -28,7 +28,7 @@ public class ExpCurrencyCost implements NpcCurrencyCost {
 
     @Override
     public boolean has(Player player) {
-        return economyProvider.has(player, (int) buyAmount);
+        return economyProvider.has(player, buyAmount);
     }
 
     @Override

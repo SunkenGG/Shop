@@ -2,6 +2,7 @@ package gg.sunken.shop.ui;
 
 import gg.sunken.shop.entity.trades.NpcCurrencyCost;
 import gg.sunken.shop.entity.trades.NpcOffer;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -58,6 +59,7 @@ public class ShopItemButton extends AbstractItem {
                 }
 
                 if (!offer.canBuy(player)) {
+                    player.sendMessage(ChatColor.RED + "You cannot buy this item.");
                     return;
                 }
 
@@ -70,6 +72,7 @@ public class ShopItemButton extends AbstractItem {
                 }
 
                 if (!offer.canSell(player)) {
+                    player.sendMessage(ChatColor.RED + "You cannot sell this item.");
                     return;
                 }
 
@@ -82,6 +85,7 @@ public class ShopItemButton extends AbstractItem {
                 }
 
                 if (!offer.canBuy(player)) {
+                    player.sendMessage(ChatColor.RED + "You cannot buy this item.");
                     return;
                 }
 
@@ -101,6 +105,7 @@ public class ShopItemButton extends AbstractItem {
                 }
 
                 if (!offer.canSell(player)) {
+                    player.sendMessage(ChatColor.RED + "You cannot sell this item.");
                     return;
                 }
 

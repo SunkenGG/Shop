@@ -25,6 +25,10 @@ public interface NpcOffer {
         if (!canBuy()) return false;
 
         for (NpcCurrencyCost cost : buyCost()) {
+            if (!cost.canBuy()) {
+                return false;
+            }
+
             if (!cost.has(player)) {
                 return false;
             }
@@ -46,6 +50,10 @@ public interface NpcOffer {
         if (!canSell()) return false;
 
         for (NpcCurrencyCost cost : sellCost()) {
+            if (!cost.canSell()) {
+                return false;
+            }
+
             if (!cost.has(player)) {
                 return false;
             }

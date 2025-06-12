@@ -8,7 +8,7 @@ import gg.sunken.shop.controller.PriceSyncController;
 import gg.sunken.shop.controller.RedisPriceSyncController;
 import gg.sunken.shop.repository.DynamicPriceMongoRepository;
 import gg.sunken.shop.repository.DynamicPriceRepository;
-import gg.sunken.shop.services.ShopService;
+import gg.sunken.shop.service.ShopService;
 import lombok.Getter;
 import lombok.experimental.Accessors;
 import net.milkbowl.vault.economy.Economy;

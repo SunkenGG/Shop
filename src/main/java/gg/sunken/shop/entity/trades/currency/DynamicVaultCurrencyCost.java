@@ -1,9 +1,10 @@
 package gg.sunken.shop.entity.trades.currency;
 
 import gg.sunken.shop.ShopPlugin;
+import gg.sunken.shop.entity.DynamicPriceItem;
 import gg.sunken.shop.entity.trades.NpcCurrencyCost;
 import gg.sunken.shop.provider.economy.impl.VaultEconomyProvider;
-import gg.sunken.shop.services.ShopService;
+import gg.sunken.shop.service.ShopService;
 import org.bukkit.entity.Player;
 
 public class DynamicVaultCurrencyCost implements NpcCurrencyCost {
@@ -12,12 +13,24 @@ public class DynamicVaultCurrencyCost implements NpcCurrencyCost {
     private final String itemId;
     private final double amount;
     private final ShopService shopService;
+    private final DynamicPriceItem item;
 
     public DynamicVaultCurrencyCost(VaultEconomyProvider economyProvider, String itemId, double amount) {
         this.economyProvider = economyProvider;
         this.itemId = itemId;
         this.amount = amount;
         this.shopService = ShopPlugin.instance().shopService();
+        this.item = shopService.item(itemId);
+    }
+
+    @Override
+    public boolean canBuy() {
+        return item.hasEnoughStockToBuy();
+    }
+
+    @Override
+    public boolean canSell() {
+        return item.hasEnoughStockToSell();
     }
 
     @Override
@@ -32,7 +45,7 @@ public class DynamicVaultCurrencyCost implements NpcCurrencyCost {
 
     @Override
     public boolean has(Player player) {
-        return economyProvider.has(player, amount);
+        return economyProvider.has(player, buyCost());
     }
 
     @Override

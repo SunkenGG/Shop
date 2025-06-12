@@ -114,59 +114,24 @@ public class DebugCommand extends BukkitCommand {
             sender.sendMessage("Amount must be greater than 0.");
             return true;
         }
-
-        if (args[0].equalsIgnoreCase("sell")) {
-            DynamicPriceItem item = plugin.shopService().item(id);
-            if (item == null) {
-                sender.sendMessage("Item does not exist.");
-                return true;
-            }
-
-            try {
-                plugin.shopService().sell((Player) sender, id, amount, EconomyProviders.VAULT);
-                sender.sendMessage("Sold " + amount + " of " + item.id() + " for " + item.price() + " coins.");
-            } catch (Exception e) {
-                sender.sendMessage("Transaction failed: " + e.getMessage());
-            }
-
-            return true;
-        }
-
-        if (args[0].equalsIgnoreCase("buy")) {
-            DynamicPriceItem item = plugin.shopService().item(id);
-            if (item == null) {
-                sender.sendMessage("Item does not exist.");
-                return true;
-            }
-
-            try {
-                plugin.shopService().buy((Player) sender, id, amount, EconomyProviders.VAULT);
-                sender.sendMessage("Bought " + amount + " of " + item.id() + " for " + item.price() + " coins.");
-            } catch (Exception e) {
-                sender.sendMessage("Transaction failed: " + e.getMessage());
-            }
-        }
-
         return true;
     }
 
     @Override
     public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
         if (args.length == 1) {
-            return List.of("sell", "buy", "check", "testui");
-        } else if (args.length == 2) {
+            return List.of("check", "testui");
+        } else if (args.length == 2 && args[1].equalsIgnoreCase("check")) {
             return plugin.shopService().items().stream()
                     .map(DynamicPriceItem::id)
                     .filter(id -> id.toLowerCase().startsWith(args[1].toLowerCase()))
                     .toList();
-        } else if (args.length == 3 && (args[0].equalsIgnoreCase("sell") || args[0].equalsIgnoreCase("buy"))) {
-            return List.of("1", "5", "10", "64");
         }
         return List.of();
     }
 
     private ItemStackOffer createOffer(String id) {
-        // I know this is ugly A) test command & the line is long without it
+        // I know this is ugly. this is a test command, and the line is long without it
         return new ItemStackOffer(
                 id,
                 1,
