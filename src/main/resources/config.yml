@@ -1,0 +1,403 @@
+mongo:
+  uri: "mongodb://localhost:27017"
+  database: "mydatabase"
+
+redis:
+  uri: "redis://localhost:6379"
+
+default:
+  price: 100
+  elasticity: 0.2
+  support: 0.03
+  resistance: 0.5
+  min-price: 0.01
+  max-price: 9999
+  buy-tax: 0.15
+  sell-tax: 0.15
+
+
+items:
+  diamond:
+    id: DIAMOND
+    price: 1500
+    elasticity: 0.3
+    support: 1400
+    resistance: 5000
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  gold_ingot:
+    id: GOLD_INGOT
+    price: 1000
+    elasticity: 0.25
+    support: 900
+    resistance: 3000
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  iron_ingot:
+    id: IRON_INGOT
+    price: 500
+    elasticity: 0.2
+    support: 400
+    resistance: 1500
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  emerald:
+    id: EMERALD
+    price: 2000
+    elasticity: 0.35
+    support: 1800
+    resistance: 6000
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  coal:
+    id: COAL
+    price: 100
+    elasticity: 0.1
+    support: 80
+    resistance: 300
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  netherite_ingot:
+    id: NETHERITE_INGOT
+    price: 8000
+    elasticity: 0.4
+    support: 7000
+    resistance: 20000
+    min-price: 0.01
+    max-price: 100000
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  redstone:
+    id: REDSTONE
+    price: 50
+    elasticity: 0.05
+    support: 40
+    resistance: 150
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  oak_log:
+    id: OAK_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  spruce_log:
+    id: SPRUCE_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  birch_log:
+    id: BIRCH_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  jungle_log:
+    id: JUNGLE_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  acacia_log:
+    id: ACACIA_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  dark_oak_log:
+    id: DARK_OAK_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  mangrove_log:
+    id: MANGROVE_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  cherry_log:
+    id: CHERRY_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  pale_oak_log:
+    id: PALE_OAK_LOG
+    price: 10
+    elasticity: 0.02
+    support: 8
+    resistance: 30
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  bamboo_block:
+    id: BAMBOO_BLOCK
+    price: 15
+    elasticity: 0.03
+    support: 12
+    resistance: 50
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  crimson_stem:
+    id: CRIMSON_STEM
+    price: 20
+    elasticity: 0.04
+    support: 15
+    resistance: 60
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  warped_stem:
+    id: WARPED_STEM
+    price: 20
+    elasticity: 0.04
+    support: 15
+    resistance: 60
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  stone:
+    id: STONE
+    price: 5
+    elasticity: 0.01
+    support: 4
+    resistance: 15
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  tuff:
+    id: TUFF
+    price: 3
+    elasticity: 0.01
+    support: 2
+    resistance: 10
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  deepslate:
+    id: DEEPSLATE
+    price: 6
+    elasticity: 0.02
+    support: 5
+    resistance: 20
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  diorite:
+    id: DIORITE
+    price: 4
+    elasticity: 0.01
+    support: 3
+    resistance: 12
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  granite:
+    id: GRANITE
+    price: 4
+    elasticity: 0.01
+    support: 3
+    resistance: 12
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  andesite:
+    id: ANDESITE
+    price: 4
+    elasticity: 0.01
+    support: 3
+    resistance: 12
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  sand:
+    id: SAND
+    price: 2
+    elasticity: 0.01
+    support: 1.5
+    resistance: 5
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  gravel:
+    id: GRAVEL
+    price: 2
+    elasticity: 0.01
+    support: 1.5
+    resistance: 5
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  clay_ball:
+    id: CLAY_BALL
+    price: 3
+    elasticity: 0.01
+    support: 2
+    resistance: 10
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  obsidian:
+    id: OBSIDIAN
+    price: 100
+    elasticity: 0.05
+    support: 80
+    resistance: 300
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  nether_brick:
+    id: NETHER_BRICK
+    price: 20
+    elasticity: 0.02
+    support: 15
+    resistance: 60
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  quartz:
+    id: QUARTZ
+    price: 30
+    elasticity: 0.03
+    support: 25
+    resistance: 90
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  prismarine:
+    id: PRISMARINE
+    price: 50
+    elasticity: 0.04
+    support: 40
+    resistance: 150
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  glass:
+    id: GLASS
+    price: 5
+    elasticity: 0.01
+    support: 4
+    resistance: 15
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  white_wool:
+    id: WHITE_WOOL
+    price: 3
+    elasticity: 0.01
+    support: 2.5
+    resistance: 10
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
+
+  terracotta:
+    id: TERRACOTTA
+    price: 8
+    elasticity: 0.02
+    support: 6
+    resistance: 25
+    min-price: 0.01
+    max-price: 9999
+    buy-tax: 0.15
+    sell-tax: 0.15
